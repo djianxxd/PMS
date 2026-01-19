@@ -72,6 +72,8 @@ func main() {
 	http.HandleFunc("/todos", handlers.TodosHandler)
 	http.HandleFunc("/todos/add", handlers.AddTodoHandler)
 	http.HandleFunc("/todos/toggle", handlers.ToggleTodoHandler)
+	http.HandleFunc("/todos/checkin", handlers.CheckinTodoHandler)
+	http.HandleFunc("/todos/checkins", handlers.TodoCheckinsHandler)
 	http.HandleFunc("/todos/delete", handlers.DeleteTodoHandler)
 
 	http.HandleFunc("/export", handlers.ExportHandler)

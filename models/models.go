@@ -61,11 +61,15 @@ type HabitLog struct {
 
 // Todo represents a task
 type Todo struct {
-	ID        int       `json:"id"`
-	Content   string    `json:"content"`
-	Status    string    `json:"status"` // "pending", "completed"
-	DueDate   time.Time `json:"due_date"`
-	CreatedAt time.Time `json:"created_at"`
+	ID                int       `json:"id"`
+	Content           string    `json:"content"`
+	Status            string    `json:"status"` // "pending", "completed"
+	DueDate           time.Time `json:"due_date"`
+	CreatedAt         time.Time `json:"created_at"`
+	TodayChecked      bool      `json:"today_checked"`
+	CheckinCount      int       `json:"checkin_count"`
+	TodayCheckinCount int       `json:"today_checkin_count"`
+	LastCheckin       time.Time `json:"last_checkin"`
 }
 
 // Badge represents an achievement

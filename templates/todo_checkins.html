@@ -1,0 +1,162 @@
+{{define "content"}}
+<div class="max-w-4xl mx-auto">
+    <!-- 页面标题 -->
+    <div class="mb-8 animate-fade-in">
+        <div class="glass-panel rounded-2xl p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text mb-2">📅 打卡记录</h1>
+                    <p class="text-gray-600">查看「{{.Todo.Content}}」的所有打卡记录</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="px-3 py-1 rounded-full text-xs font-medium
+                        {{if eq .Todo.Status "pending"}}bg-yellow-100 text-yellow-800{{else}}bg-green-100 text-green-800{{end}}">
+                        {{if eq .Todo.Status "pending"}}待完成{{else}}已完成{{end}}
+                    </span>
+                    <a href="/todos" class="btn-primary">
+                        <i class="fas fa-arrow-left mr-2"></i>返回
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打卡记录列表 -->
+    <div class="glass-panel rounded-2xl p-6 animate-bounce-in">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-history mr-2"></i>打卡历史
+        </h2>
+        
+        {{if .Checkins}}
+        <div class="space-y-3">
+            {{range $index, $checkin := .Checkins}}
+            <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-purple-300 transition-all hover:shadow-sm">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-check text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800">打卡 #{{sub (len $.Checkins) $index}}</p>
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-clock mr-1"></i>
+                            {{$checkin.CheckinDate.Format "2006-01-02 15:04:05"}}
+                        </p>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500">
+                    {{if eq $index 0}}
+                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                        <i class="fas fa-star mr-1"></i>最新
+                    </span>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="text-center py-12">
+            <div class="text-6xl text-gray-300 mb-4">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+            <p class="text-gray-500 text-lg">暂无打卡记录</p>
+            <p class="text-gray-400 text-sm mt-2">点击下方的"打卡"按钮开始记录</p>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- 快速打卡按钮 -->
+    <div class="mt-6 text-center">
+        <form action="/todos/checkin" method="POST" class="inline">
+            <input type="hidden" name="id" value="{{.Todo.ID}}">
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-plus mr-2"></i>立即打卡
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+
+    .gradient-text {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .animate-bounce-in {
+        animation: bounceIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes bounceIn {
+        0% { transform: scale(0.9); opacity: 0; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .btn-primary {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+</style>
+
+<script>
+    // 添加模板函数
+    const template = {
+        sub: function(a, b) {
+            return a - b;
+        }
+    };
+
+    // 页面加载动画
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('.animate-bounce-in');
+        elements.forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                el.style.transition = 'all 0.5s ease-out';
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{{end}}

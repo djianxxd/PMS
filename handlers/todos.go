@@ -14,11 +14,12 @@ import (
 // TodosHandler renders the todos page
 func TodosHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
-		ActivePage   string
-		Todos        []models.Todo
-		TotalCount   int
-		PendingCount int
-		DoneCount    int
+		ActivePage    string
+		Todos         []models.Todo
+		TotalCount    int
+		PendingCount  int
+		DoneCount     int
+		TotalCheckins int
 	}{
 		ActivePage: "todos",
 	}
@@ -35,6 +36,19 @@ func TodosHandler(w http.ResponseWriter, r *http.Request) {
 			if dueDate.Valid {
 				t.DueDate = dueDate.Time
 			}
+
+			// 获取总打卡次数和最近打卡时间
+			var totalCount int
+			var lastCheckin sql.NullTime
+			err := db.DB.QueryRow("SELECT COUNT(*), MAX(checkin_date) FROM todo_checkins WHERE todo_id = ?", t.ID).Scan(&totalCount, &lastCheckin)
+			if err == nil {
+				t.CheckinCount = totalCount
+				if lastCheckin.Valid {
+					t.LastCheckin = lastCheckin.Time
+				}
+				data.TotalCheckins += totalCount
+			}
+
 			data.Todos = append(data.Todos, t)
 			data.TotalCount++
 			if t.Status == "pending" {
@@ -154,6 +168,80 @@ func ToggleTodoHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/todos", http.StatusSeeOther)
 }
 
+// CheckinTodoHandler handles todo check-ins
+func CheckinTodoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
+	id, _ := strconv.Atoi(r.FormValue("id"))
+	now := time.Now()
+
+	// 直接记录打卡，不做每天限制
+	_, err := db.DB.Exec("INSERT INTO todo_checkins (todo_id, checkin_date) VALUES (?, ?)", id, now)
+	if err != nil {
+		log.Printf("Error inserting checkin: %v", err)
+	} else {
+		log.Printf("✅ Successfully checked in todo %d at %s", id, now.Format("2006-01-02 15:04:05"))
+	}
+
+	http.Redirect(w, r, "/todos", http.StatusSeeOther)
+}
+
+// TodoCheckinsHandler shows detailed checkin history for a todo
+func TodoCheckinsHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
+	todoID, err := strconv.Atoi(id)
+	if err != nil {
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
+	data := struct {
+		ActivePage string
+		Todo       models.Todo
+		Checkins   []struct {
+			ID          int       `json:"id"`
+			CheckinDate time.Time `json:"checkin_date"`
+		}
+	}{
+		ActivePage: "todos",
+	}
+
+	// 获取todo信息
+	err = db.DB.QueryRow("SELECT id, content, status, due_date FROM todos WHERE id = ?", todoID).Scan(
+		&data.Todo.ID, &data.Todo.Content, &data.Todo.Status, &data.Todo.DueDate)
+	if err != nil {
+		log.Printf("Error fetching todo: %v", err)
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
+	// 获取打卡记录
+	rows, err := db.DB.Query("SELECT id, checkin_date FROM todo_checkins WHERE todo_id = ? ORDER BY checkin_date DESC LIMIT 50", todoID)
+	if err != nil {
+		log.Printf("Error fetching checkins: %v", err)
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			var checkin struct {
+				ID          int       `json:"id"`
+				CheckinDate time.Time `json:"checkin_date"`
+			}
+			rows.Scan(&checkin.ID, &checkin.CheckinDate)
+			data.Checkins = append(data.Checkins, checkin)
+		}
+	}
+
+	renderTemplate(w, "todo_checkins.html", data)
+}
+
 // DeleteTodoHandler deletes a todo
 func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -163,9 +251,16 @@ func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, _ := strconv.Atoi(r.FormValue("id"))
 
-	_, err := db.DB.Exec("DELETE FROM todos WHERE id = ?", id)
+	// 先删除相关的打卡记录
+	_, err := db.DB.Exec("DELETE FROM todo_checkins WHERE todo_id = ?", id)
 	if err != nil {
-		log.Println("Error deleting todo:", err)
+		log.Printf("Error deleting todo checkins: %v", err)
+	}
+
+	// 删除todo
+	_, err = db.DB.Exec("DELETE FROM todos WHERE id = ?", id)
+	if err != nil {
+		log.Printf("Error deleting todo: %v", err)
 	}
 
 	http.Redirect(w, r, "/todos", http.StatusSeeOther)

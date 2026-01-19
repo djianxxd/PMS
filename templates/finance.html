@@ -76,16 +76,24 @@
                     <!-- 分类选择 -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">分类</label>
-                        <select name="category_id" class="input-field w-full px-4 py-3 rounded-xl appearance-none cursor-pointer bg-white">
+                        <select name="category_id" id="categorySelect" class="input-field w-full px-4 py-3 rounded-xl appearance-none cursor-pointer bg-white">
                             <option value="">选择分类...</option>
-                            {{range .Categories}}
-                                {{if eq .Type "expense"}}
-                                    <option value="{{.ID}}" class="text-red-600">🔴 {{.Name}}</option>
+                            <!-- 支出分类 -->
+                            <optgroup id="expenseCategories" label="🔴 支出分类">
+                                {{range .Categories}}
+                                    {{if eq .Type "expense"}}
+                                        <option value="{{.ID}}" class="text-red-600">🔴 {{.Name}}</option>
+                                    {{end}}
                                 {{end}}
-                                {{if eq .Type "income"}}
-                                    <option value="{{.ID}}" class="text-green-600">🟢 {{.Name}}</option>
+                            </optgroup>
+                            <!-- 收入分类 -->
+                            <optgroup id="incomeCategories" label="🟢 收入分类" style="display: none;">
+                                {{range .Categories}}
+                                    {{if eq .Type "income"}}
+                                        <option value="{{.ID}}" class="text-green-600">🟢 {{.Name}}</option>
+                                    {{end}}
                                 {{end}}
-                            {{end}}
+                            </optgroup>
                             <option value="custom" class="text-purple-600">🟣 自定义分类</option>
                         </select>
                         <div class="mt-3">
@@ -268,16 +276,54 @@
         });
     }
 
+    // 分类显示切换
+    function updateCategoryVisibility(type) {
+        const expenseGroup = document.getElementById('expenseCategories');
+        const incomeGroup = document.getElementById('incomeCategories');
+        const select = document.getElementById('categorySelect');
+        
+        if (type === 'income') {
+            expenseGroup.style.display = 'none';
+            incomeGroup.style.display = 'block';
+            // 重置选择，自动选中收入分组的第一个选项
+            const firstIncomeOption = incomeGroup.querySelector('option:not([style*="display: none"])');
+            if (firstIncomeOption) {
+                select.value = firstIncomeOption.value;
+            }
+        } else {
+            expenseGroup.style.display = 'block';
+            incomeGroup.style.display = 'none';
+            // 重置选择，自动选中支出分组的第一个选项
+            const firstExpenseOption = expenseGroup.querySelector('option:not([style*="display: none"])');
+            if (firstExpenseOption) {
+                select.value = firstExpenseOption.value;
+            }
+        }
+    }
+
+    // 监听类型选择变化
+    document.querySelectorAll('input[name="type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            updateCategoryVisibility(this.value);
+        });
+    });
+
+    // 初始化分类可见性（默认显示支出分类）
+    const initialType = document.querySelector('input[name="type"]:checked')?.value || 'expense';
+    updateCategoryVisibility(initialType);
+
     // 快速记账快捷键
     document.addEventListener('keydown', function(e) {
         // Alt + E: 快速记录支出
         if (e.altKey && e.key === 'e') {
             document.querySelector('input[value="expense"]').checked = true;
+            updateCategoryOptions('expense');
             amountInput?.focus();
         }
         // Alt + I: 快速记录收入
         if (e.altKey && e.key === 'i') {
             document.querySelector('input[value="income"]').checked = true;
+            updateCategoryOptions('income');
             amountInput?.focus();
         }
     });

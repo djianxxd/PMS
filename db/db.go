@@ -89,6 +89,13 @@ func createTables() {
 			due_date DATETIME,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		);`,
+		`CREATE TABLE IF NOT EXISTS todo_checkins (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			todo_id INTEGER,
+			checkin_date DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY(todo_id) REFERENCES todos(id)
+		);`,
 		`CREATE TABLE IF NOT EXISTS badges (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name TEXT,
