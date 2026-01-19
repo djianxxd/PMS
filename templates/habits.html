@@ -26,6 +26,14 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {{range .Habits}}
             <div class="bg-white rounded-xl shadow-sm p-6 relative overflow-hidden group">
+                <!-- Delete Button -->
+                <form action="/habits/delete" method="POST" class="absolute top-4 right-4 z-10" onsubmit="return confirm('确定要删除这个习惯吗？这将同时删除所有打卡记录。');">
+                     <input type="hidden" name="id" value="{{.ID}}">
+                     <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                         <i class="fas fa-trash-alt"></i>
+                     </button>
+                </form>
+
                 <div class="flex justify-between items-start mb-4">
                     <div>
                         <h4 class="text-lg font-bold text-gray-800">{{.Name}}</h4>

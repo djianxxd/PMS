@@ -43,10 +43,7 @@ func FinanceHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fetch Goals (Placeholder logic for current amount)
-	// In a real app, we'd sum transactions based on goal dates/categories
-	// For now, we'll fetch goals and just mock current amount calculation based on total income/expense for simplicity or show 0
-	// Let's try to calculate current amount for the goal period
+	// Fetch Goals
 	gRows, err := db.DB.Query("SELECT id, type, target_amount, start_date, end_date FROM finance_goals")
 	if err != nil {
 		log.Println(err)
@@ -56,8 +53,6 @@ func FinanceHandler(w http.ResponseWriter, r *http.Request) {
 			var g models.FinanceGoal
 			gRows.Scan(&g.ID, &g.Type, &g.TargetAmount, &g.StartDate, &g.EndDate)
 
-			// Calculate current progress (Expenses for that period)
-			// Assuming goals are usually budget limits (Expenses)
 			var current float64
 			err := db.DB.QueryRow("SELECT SUM(amount) FROM transactions WHERE type='expense' AND date >= ? AND date <= ?", g.StartDate, g.EndDate).Scan(&current)
 			if err == nil {
@@ -65,11 +60,6 @@ func FinanceHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			data.Goals = append(data.Goals, g)
 		}
-	}
-
-	// If no goals, maybe seed a dummy one for UI demo
-	if len(data.Goals) == 0 {
-		// Mock logic or just leave empty
 	}
 
 	renderTemplate(w, "finance.html", data)
@@ -97,7 +87,19 @@ func AddTransactionHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/finance", http.StatusSeeOther)
 }
 
-// AddGoalHandler (Optional) - Not in UI yet but good to have
-func AddGoalHandler(w http.ResponseWriter, r *http.Request) {
-	// ... logic to add goal
+// DeleteTransactionHandler handles deleting a transaction
+func DeleteTransactionHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/finance", http.StatusSeeOther)
+		return
+	}
+
+	id, _ := strconv.Atoi(r.FormValue("id"))
+
+	_, err := db.DB.Exec("DELETE FROM transactions WHERE id = ?", id)
+	if err != nil {
+		log.Println("Error deleting transaction:", err)
+	}
+
+	http.Redirect(w, r, "/finance", http.StatusSeeOther)
 }

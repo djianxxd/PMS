@@ -13,19 +13,16 @@ func main() {
 	db.InitDB()
 	defer db.DB.Close()
 
-	// Static Files
-	// Assuming you might want to serve static assets if any, though currently using CDN
-	// fs := http.FileServer(http.Dir("static"))
-	// http.Handle("/static/", http.StripPrefix("/static/", fs))
-
 	// Routes
 	http.HandleFunc("/", handlers.DashboardHandler)
 
 	http.HandleFunc("/finance", handlers.FinanceHandler)
 	http.HandleFunc("/finance/add", handlers.AddTransactionHandler)
+	http.HandleFunc("/finance/delete", handlers.DeleteTransactionHandler)
 
 	http.HandleFunc("/habits", handlers.HabitsHandler)
 	http.HandleFunc("/habits/add", handlers.AddHabitHandler)
+	http.HandleFunc("/habits/delete", handlers.DeleteHabitHandler)
 	http.HandleFunc("/habits/checkin", handlers.CheckinHabitHandler)
 
 	http.HandleFunc("/todos", handlers.TodosHandler)

@@ -69,6 +69,29 @@ func AddHabitHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/habits", http.StatusSeeOther)
 }
 
+// DeleteHabitHandler deletes a habit
+func DeleteHabitHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+
+	id, _ := strconv.Atoi(r.FormValue("id"))
+
+	// Delete logs first (foreign key)
+	_, err := db.DB.Exec("DELETE FROM habit_logs WHERE habit_id = ?", id)
+	if err != nil {
+		log.Println("Error deleting habit logs:", err)
+	}
+
+	_, err = db.DB.Exec("DELETE FROM habits WHERE id = ?", id)
+	if err != nil {
+		log.Println("Error deleting habit:", err)
+	}
+
+	http.Redirect(w, r, "/habits", http.StatusSeeOther)
+}
+
 // CheckinHabitHandler handles habit check-ins
 func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -89,7 +112,6 @@ func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if count > 0 {
-		// Already checked in
 		http.Redirect(w, r, "/habits", http.StatusSeeOther)
 		return
 	}
@@ -103,9 +125,6 @@ func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update Streak and Total
-	// Basic streak logic: if last log was yesterday (or today), streak continues.
-	// For simplicity, we'll just check if there was a log yesterday.
-
 	yesterday := startOfDay.AddDate(0, 0, -1)
 	var yesterdayCount int
 	db.DB.QueryRow("SELECT COUNT(*) FROM habit_logs WHERE habit_id = ? AND date >= ? AND date < ?", habitID, yesterday, startOfDay).Scan(&yesterdayCount)
@@ -113,13 +132,12 @@ func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
 	var streak int
 	var totalDays int
 
-	// Get current stats
 	db.DB.QueryRow("SELECT streak, total_days FROM habits WHERE id = ?", habitID).Scan(&streak, &totalDays)
 
 	if yesterdayCount > 0 {
 		streak++
 	} else {
-		streak = 1 // Reset or start new
+		streak = 1
 	}
 	totalDays++
 
@@ -135,7 +153,6 @@ func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkBadges(totalDays, streak int) {
-	// Simple logic: check all badges conditions
 	rows, err := db.DB.Query("SELECT id, condition_days, unlocked FROM badges WHERE unlocked = 0")
 	if err != nil {
 		return
@@ -146,15 +163,6 @@ func checkBadges(totalDays, streak int) {
 		var id, days int
 		var unlocked int
 		rows.Scan(&id, &days, &unlocked)
-
-		// Logic currently maps any 'days' condition to total_days or streak?
-		// The prompt said "based on completion days", assuming total or streak.
-		// Let's assume the seeded badges use 'condition_days' as a threshold for total_days for now,
-		// or we could split types. Given the seed names "Streak 7 days", let's assume it checks streak if name implies,
-		// but our schema just has `condition_days`.
-		// Let's check both or make it generic: if streak >= condition OR total >= condition.
-		// A better design would have `type` in badge.
-		// For this MVP, if total_days >= days, unlock.
 
 		if totalDays >= days || streak >= days {
 			db.DB.Exec("UPDATE badges SET unlocked = 1 WHERE id = ?", id)
