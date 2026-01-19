@@ -116,3 +116,13 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	renderTemplate(w, "dashboard.html", data)
 }
+
+// BackupPageHandler handles the backup/restore page
+func BackupPageHandler(w http.ResponseWriter, r *http.Request) {
+	data := struct {
+		ActivePage string
+	}{
+		ActivePage: "backup",
+	}
+	renderTemplate(w, "backup.html", data)
+}
