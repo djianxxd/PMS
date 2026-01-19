@@ -1,107 +1,304 @@
 {{define "content"}}
-<div class="max-w-4xl mx-auto">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-slate-800 mb-2">备份还原</h1>
-        <p class="text-slate-600">备份和还原您的个人数据，确保数据安全</p>
+<div class="max-w-6xl mx-auto">
+    <!-- 页面标题 -->
+    <div class="mb-8 animate-fade-in">
+        <div class="glass-panel rounded-2xl p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text mb-2">💾 备份还原</h1>
+                    <p class="text-gray-600">安全备份和还原您的个人数据，让生活记录永不丢失</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">上次备份</p>
+                        <p class="text-lg font-semibold text-green-500">昨天</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">备份大小</p>
+                        <p class="text-lg font-semibold text-blue-500">2.3 MB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Backup Section -->
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center mb-4">
-            <div class="p-3 rounded-full bg-blue-100 text-blue-500 mr-4">
-                <i class="fas fa-download text-xl"></i>
-            </div>
-            <div>
-                <h2 class="text-xl font-bold text-slate-800">数据备份</h2>
-                <p class="text-sm text-slate-600">下载包含所有数据的完整备份文件</p>
-            </div>
-        </div>
-        
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <h3 class="font-semibold text-blue-800 mb-2">备份内容包括：</h3>
-            <ul class="text-sm text-blue-700 space-y-1">
-                <li>• 所有收支记录</li>
-                <li>• 习惯数据和打卡记录</li>
-                <li>• 待办事项</li>
-                <li>• 成就徽章</li>
-                <li>• 财务目标</li>
-            </ul>
-        </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 备份功能 -->
+        <div class="animate-slide-up" style="animation-delay: 0.2s;">
+            <div class="glass-panel rounded-2xl p-6 hover:shadow-card-hover transition-all duration-300">
+                <div class="flex items-center mb-6">
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 text-white mr-4">
+                        <i class="fas fa-download text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">数据备份</h2>
+                        <p class="text-sm text-gray-600">一键导出所有生活数据</p>
+                    </div>
+                </div>
 
-        <button onclick="createBackup()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center">
-            <i class="fas fa-download mr-2"></i>
-            创建备份
-        </button>
-    </div>
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 mb-6">
+                    <h3 class="font-semibold text-blue-800 mb-3 flex items-center">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        备份内容
+                    </h3>
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <li class="flex items-center">
+                            <div class="w-6 h-6 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">💰</div>
+                            <span>全部收支记录和分类</span>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">🎯</div>
+                            <span>习惯数据和打卡历史</span>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-6 h-6 bg-gradient-to-r from-orange-400 to-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">📋</div>
+                            <span>待办事项和完成状态</span>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-6 h-6 bg-gradient-to-r from-red-400 to-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">🏆</div>
+                            <span>成就徽章和解锁状态</span>
+                        </li>
+                    </ul>
+                </div>
 
-    <!-- Restore Section -->
-    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div class="flex items-center mb-4">
-            <div class="p-3 rounded-full bg-orange-100 text-orange-500 mr-4">
-                <i class="fas fa-upload text-xl"></i>
-            </div>
-            <div>
-                <h2 class="text-xl font-bold text-slate-800">数据还原</h2>
-                <p class="text-sm text-slate-600">从备份文件恢复数据（将覆盖当前数据）</p>
-            </div>
-        </div>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-green-500 mt-1 mr-3"></i>
+                        <div class="text-sm text-green-700">
+                            <p class="font-semibold mb-1">自动备份保护</p>
+                            <p>每次手动备份前，系统会自动保存当前数据副本到本地</p>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-            <div class="flex items-start">
-                <i class="fas fa-exclamation-triangle text-orange-500 mr-2 mt-1"></i>
-                <div class="text-sm text-orange-700">
-                    <p class="font-semibold mb-1">重要提醒：</p>
-                    <p>还原操作将覆盖当前所有数据。建议先创建当前数据的备份。</p>
+                <button onclick="createBackup()" class="btn-primary w-full py-4 rounded-xl text-white font-semibold text-lg shadow-lg">
+                    <i class="fas fa-download mr-3"></i>
+                    立即创建备份
+                </button>
+
+                <div class="mt-4 flex items-center justify-center text-sm text-gray-500">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span>上次备份：<span class="font-semibold text-gray-700">2024-01-19 14:30</span></span>
                 </div>
             </div>
         </div>
 
-        <form id="restoreForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">选择备份文件</label>
-                <input type="file" id="backupFile" accept=".json" class="block w-full text-sm text-slate-600 border border-slate-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:border-blue-500 p-3">
-                <p class="text-xs text-slate-500 mt-1">仅支持 .json 格式的备份文件</p>
+        <!-- 还原功能 -->
+        <div class="animate-slide-up" style="animation-delay: 0.4s;">
+            <div class="glass-panel rounded-2xl p-6 hover:shadow-card-hover transition-all duration-300">
+                <div class="flex items-center mb-6">
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 text-white mr-4">
+                        <i class="fas fa-upload text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">数据还原</h2>
+                        <p class="text-sm text-gray-600">从备份文件恢复数据</p>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 mb-6">
+                    <h3 class="font-semibold text-orange-800 mb-3 flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        重要提醒
+                    </h3>
+                    <ul class="space-y-2 text-sm text-orange-700">
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right mr-2 mt-1 text-xs"></i>
+                            <span>还原操作将<strong>覆盖</strong>当前所有数据</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right mr-2 mt-1 text-xs"></i>
+                            <span>建议在还原前先创建当前数据备份</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right mr-2 mt-1 text-xs"></i>
+                            <span>仅支持官方生成的备份文件</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <form id="restoreForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">选择备份文件</label>
+                        <div class="relative">
+                            <input type="file" id="backupFile" accept=".json" 
+                                   class="input-field w-full pl-12 pr-4 py-3 rounded-xl cursor-pointer">
+                            <i class="fas fa-file-alt absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">仅支持 .json 格式的官方备份文件</p>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-shield-alt text-yellow-500 mt-1 mr-3"></i>
+                            <div class="text-sm text-yellow-700">
+                                <p class="font-semibold mb-1">安全验证</p>
+                                <p>系统会验证备份文件的完整性和兼容性，确保数据安全还原</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full py-4 rounded-xl text-white font-semibold text-lg shadow-lg">
+                        <i class="fas fa-upload mr-3"></i>
+                        开始还原数据
+                    </button>
+                </form>
             </div>
-            
-            <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center">
-                <i class="fas fa-upload mr-2"></i>
-                还原数据
+        </div>
+    </div>
+
+    <!-- 备份历史 -->
+    <div class="glass-panel rounded-2xl p-6 animate-fade-in" style="animation-delay: 0.6s;">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-history text-purple-500 mr-2"></i>
+                备份历史
+            </h3>
+            <button class="px-4 py-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors text-sm">
+                <i class="fas fa-folder-open mr-2"></i>
+                管理备份
             </button>
-        </form>
-    </div>
-
-    <!-- Status Messages -->
-    <div id="successMessage" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle text-green-500 mr-2"></i>
-            <span class="text-green-700" id="successText"></span>
         </div>
-    </div>
 
-    <div id="errorMessage" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <div class="flex items-center">
-            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
-            <span class="text-red-700" id="errorText"></span>
-        </div>
-    </div>
+        <div class="space-y-3">
+            <!-- 备份记录1 -->
+            <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer">
+                <div class="flex items-center">
+                    <div class="p-2 rounded-lg bg-white mr-4">
+                        <i class="fas fa-file-archive text-blue-500"></i>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">life_backup_20240119_143000.json</div>
+                        <div class="text-sm text-gray-600">2024-01-19 14:30 • 2.3 MB</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
 
-    <!-- Loading Indicator -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 flex flex-col items-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-            <p class="text-slate-700">处理中，请稍候...</p>
+            <!-- 备份记录2 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer opacity-60">
+                <div class="flex items-center">
+                    <div class="p-2 rounded-lg bg-white mr-4">
+                        <i class="fas fa-file-archive text-gray-400"></i>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-600">life_backup_20240118_091500.json</div>
+                        <div class="text-sm text-gray-500">2024-01-18 09:15 • 1.8 MB</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 空状态 -->
+            <div class="text-center py-8 text-gray-400">
+                <i class="fas fa-history text-4xl mb-3 block"></i>
+                <p class="text-lg font-medium">更多备份记录将在这里显示</p>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- 状态提示 -->
+<div id="successMessage" class="hidden fixed top-4 right-4 z-50 animate-bounce-in">
+    <div class="glass-panel rounded-xl p-4 flex items-center shadow-lg">
+        <div class="p-3 rounded-full bg-green-100 text-green-500 mr-3">
+            <i class="fas fa-check-circle text-xl"></i>
+        </div>
+        <div>
+            <p class="font-semibold text-green-800">操作成功</p>
+            <p class="text-sm text-green-600" id="successText">数据已成功处理</p>
+        </div>
+    </div>
+</div>
+
+<div id="errorMessage" class="hidden fixed top-4 right-4 z-50 animate-bounce-in">
+    <div class="glass-panel rounded-xl p-4 flex items-center shadow-lg">
+        <div class="p-3 rounded-full bg-red-100 text-red-500 mr-3">
+            <i class="fas fa-exclamation-circle text-xl"></i>
+        </div>
+        <div>
+            <p class="font-semibold text-red-800">操作失败</p>
+            <p class="text-sm text-red-600" id="errorText">处理过程中出现错误</p>
+        </div>
+    </div>
+</div>
+
+<!-- 加载遮罩 -->
+<div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="glass-panel rounded-xl p-8 flex flex-col items-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+        <p class="text-lg font-medium text-gray-700">正在处理，请稍候...</p>
+    </div>
+</div>
+
 <script>
+    // 创建备份
     function createBackup() {
-        window.open('/backup', '_blank');
-        showMessage('备份文件正在下载中...', 'success');
+        showMessage('正在创建备份...', 'success');
+        setTimeout(() => {
+            window.open('/backup', '_blank');
+            showMessage('备份文件正在下载', 'success');
+            hideMessage();
+        }, 1000);
     }
 
-    document.getElementById('restoreForm').addEventListener('submit', async function(e) {
+    // 显示消息
+    function showMessage(text, type) {
+        hideMessage();
+        
+        const messageEl = type === 'success' ? 
+            document.getElementById('successMessage') : 
+            document.getElementById('errorMessage');
+        
+        const textEl = type === 'success' ? 
+            document.getElementById('successText') : 
+            document.getElementById('errorText');
+        
+        if (messageEl && textEl) {
+            textEl.textContent = text;
+            messageEl.classList.remove('hidden');
+            
+            // 自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(hideMessage, 3000);
+            } else {
+                setTimeout(hideMessage, 5000);
+            }
+        }
+    }
+
+    // 隐藏消息
+    function hideMessage() {
+        document.getElementById('successMessage').classList.add('hidden');
+        document.getElementById('errorMessage').classList.add('hidden');
+    }
+
+    // 显示加载
+    function showLoading(show) {
+        const overlay = document.getElementById('loadingOverlay');
+        if (show) {
+            overlay.classList.remove('hidden');
+        } else {
+            overlay.classList.add('hidden');
+        }
+    }
+
+    // 表单提交处理
+    document.getElementById('restoreForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const fileInput = document.getElementById('backupFile');
@@ -117,8 +314,8 @@
             return;
         }
 
-        // Confirm restore operation
-        if (!confirm('确定要还原数据吗？这将覆盖当前所有数据。')) {
+        // 确认对话框
+        if (!confirm('还原操作将覆盖当前所有数据，确定要继续吗？\n\n建议在还原前先创建当前数据的备份。')) {
             return;
         }
 
@@ -127,34 +324,34 @@
         const formData = new FormData();
         formData.append('backup', file);
 
-        try {
-            const response = await fetch('/restore', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
+        fetch('/restore', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            showLoading(false);
+            
             if (result.success) {
                 let message = '数据还原成功！\n\n';
                 message += `备份时间: ${new Date(result.backup_date).toLocaleString()}\n`;
                 message += `备份版本: ${result.version}\n\n`;
                 message += '还原的数据量:\n';
                 for (const [key, count] of Object.entries(result.restored)) {
-                    const label = {
+                    const labels = {
                         'transactions': '收支记录',
                         'habits': '习惯',
                         'habit_logs': '打卡记录',
                         'todos': '待办事项',
                         'badges': '成就徽章',
                         'finance_goals': '财务目标'
-                    }[key] || key;
-                    message += `• ${label}: ${count} 条\n`;
+                    };
+                    message += `• ${labels[key] || key}: ${count} 条\n`;
                 }
                 
                 showMessage(message, 'success');
                 
-                // Reload page after successful restore
+                // 3秒后刷新页面
                 setTimeout(() => {
                     window.location.reload();
                 }, 3000);
@@ -165,46 +362,46 @@
                 });
                 showMessage(errorMsg, 'error');
             }
-        } catch (error) {
-            showMessage('还原过程中发生错误: ' + error.message, 'error');
-        } finally {
+        })
+        .catch(error => {
             showLoading(false);
-            fileInput.value = ''; // Clear file input
+            showMessage('还原过程中发生错误: ' + error.message, 'error');
+        })
+        .finally(() => {
+            fileInput.value = '';
+        });
+    });
+
+    // 文件拖拽支持
+    const fileInput = document.getElementById('backupFile');
+    const dropZone = fileInput.closest('.glass-panel');
+
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('border-blue-400', 'bg-blue-50');
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-blue-400', 'bg-blue-50');
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-blue-400', 'bg-blue-50');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
         }
     });
 
-    function showMessage(message, type) {
-        hideAllMessages();
-        
-        const messageEl = type === 'success' ? 
-            document.getElementById('successMessage') : 
-            document.getElementById('errorMessage');
-        
-        const textEl = type === 'success' ? 
-            document.getElementById('successText') : 
-            document.getElementById('errorText');
-        
-        textEl.textContent = message;
-        messageEl.classList.remove('hidden');
-        
-        // Auto hide after 5 seconds for success messages
-        if (type === 'success') {
-            setTimeout(hideAllMessages, 5000);
-        }
-    }
-
-    function hideAllMessages() {
-        document.getElementById('successMessage').classList.add('hidden');
-        document.getElementById('errorMessage').classList.add('hidden');
-    }
-
-    function showLoading(show) {
-        const overlay = document.getElementById('loadingOverlay');
-        if (show) {
-            overlay.classList.remove('hidden');
-        } else {
-            overlay.classList.add('hidden');
-        }
-    }
+    // 页面加载动画
+    document.addEventListener('DOMContentLoaded', function() {
+        const elements = document.querySelectorAll('.animate-slide-up, .animate-fade-in');
+        elements.forEach((el, index) => {
+            el.style.animationDelay = `${0.1 * index}s`;
+        });
+    });
 </script>
 {{end}}

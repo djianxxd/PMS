@@ -7,14 +7,18 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
 // TodosHandler renders the todos page
 func TodosHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
-		ActivePage string
-		Todos      []models.Todo
+		ActivePage   string
+		Todos        []models.Todo
+		TotalCount   int
+		PendingCount int
+		DoneCount    int
 	}{
 		ActivePage: "todos",
 	}
@@ -32,6 +36,12 @@ func TodosHandler(w http.ResponseWriter, r *http.Request) {
 				t.DueDate = dueDate.Time
 			}
 			data.Todos = append(data.Todos, t)
+			data.TotalCount++
+			if t.Status == "pending" {
+				data.PendingCount++
+			} else if t.Status == "completed" {
+				data.DoneCount++
+			}
 		}
 	}
 
@@ -48,16 +58,69 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 	dueDateStr := r.FormValue("due_date")
 
+	log.Printf("📝 添加待办事项 - 内容: '%s', 截止时间: '%s'", content, dueDateStr)
+
+	// 验证内容不为空
+	if strings.TrimSpace(content) == "" {
+		log.Printf("❌ 待办事项内容为空")
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
 	var dueDate time.Time
+	var dueDateToInsert interface{} = nil // 使用nil来处理空日期
+
 	if dueDateStr != "" {
-		dueDate, _ = time.Parse("2006-01-02T15:04", dueDateStr)
+		// 尝试多种日期格式解析
+		formats := []string{
+			"2006-01-02T15:04",    // HTML datetime-local 格式
+			"2006-01-02 15:04:05", // 标准格式
+			"2006-01-02T15:04:05", // 带秒的格式
+			"2006-01-02",          // 只有日期
+		}
+
+		for _, format := range formats {
+			if parsed, err := time.Parse(format, dueDateStr); err == nil {
+				dueDate = parsed
+				dueDateToInsert = parsed
+				log.Printf("✅ 日期解析成功: %s (格式: %s)", dueDate.Format("2006-01-02 15:04:05"), format)
+				break
+			}
+		}
+
+		if dueDateToInsert == nil {
+			log.Printf("⚠️ 无法解析日期格式，将不设置截止时间: %s", dueDateStr)
+		}
+	} else {
+		log.Printf("ℹ️ 未设置截止时间")
 	}
 
-	_, err := db.DB.Exec("INSERT INTO todos (content, due_date) VALUES (?, ?)", content, dueDate)
+	// 插入到数据库
+	result, err := db.DB.Exec("INSERT INTO todos (content, due_date) VALUES (?, ?)", content, dueDateToInsert)
 	if err != nil {
-		log.Println("Error adding todo:", err)
+		log.Printf("❌ 插入待办事项失败: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	// 获取插入的ID进行验证
+	if id, err := result.LastInsertId(); err == nil {
+		log.Printf("✅ 成功插入待办事项，ID: %d", id)
+
+		// 验证插入的数据
+		var verifyContent string
+		var verifyDueDate sql.NullTime
+		err := db.DB.QueryRow("SELECT content, due_date FROM todos WHERE id = ?", id).Scan(&verifyContent, &verifyDueDate)
+		if err == nil {
+			if verifyDueDate.Valid {
+				log.Printf("✅ 验证成功: 内容='%s', 截止时间=%s", verifyContent, verifyDueDate.Time.Format("2006-01-02 15:04:05"))
+			} else {
+				log.Printf("✅ 验证成功: 内容='%s', 无截止时间", verifyContent)
+			}
+		}
+	}
+
+	log.Printf("🔄 重定向到待办事项页面")
 	http.Redirect(w, r, "/todos", http.StatusSeeOther)
 }
 

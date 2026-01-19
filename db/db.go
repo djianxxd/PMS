@@ -30,6 +30,7 @@ func InitDB() {
 	migrateDatabase()
 	seedBadges()
 	seedCategories()
+	seedSampleData()
 
 	// 验证分类是否成功初始化
 	verifyCategories()
@@ -203,6 +204,11 @@ func seedCategories() {
 			log.Println("Error seeding expense categories:", err)
 		}
 	}
+}
+
+func seedSampleData() {
+	// 不添加示例数据，保持数据库为空
+	log.Println("Database initialized without sample data - ready for user input")
 }
 
 func migrateDatabase() {

@@ -12,9 +12,14 @@ import (
 // HabitsHandler renders the habits page
 func HabitsHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
-		ActivePage string
-		Habits     []models.Habit
-		Badges     []models.Badge
+		ActivePage     string
+		Habits         []models.Habit
+		Badges         []models.Badge
+		TotalHabits    int
+		DoneToday      int
+		MaxStreak      int
+		UnlockedBadges int
+		TotalBadges    int
 	}{
 		ActivePage: "habits",
 	}
@@ -28,7 +33,22 @@ func HabitsHandler(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			var h models.Habit
 			rows.Scan(&h.ID, &h.Name, &h.Description, &h.Frequency, &h.Streak, &h.TotalDays)
+
+			// Check if habit is already checked today
+			startOfDay := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
+			var count int
+			db.DB.QueryRow("SELECT COUNT(*) FROM habit_logs WHERE habit_id = ? AND date >= ?", h.ID, startOfDay).Scan(&count)
+			h.TodayChecked = count > 0
+
+			if h.TodayChecked {
+				data.DoneToday++
+			}
+			if h.Streak > data.MaxStreak {
+				data.MaxStreak = h.Streak
+			}
+
 			data.Habits = append(data.Habits, h)
+			data.TotalHabits++
 		}
 	}
 
@@ -44,6 +64,10 @@ func HabitsHandler(w http.ResponseWriter, r *http.Request) {
 			bRows.Scan(&b.ID, &b.Name, &b.Description, &b.Icon, &unlockedInt)
 			b.Unlocked = unlockedInt == 1
 			data.Badges = append(data.Badges, b)
+			data.TotalBadges++
+			if b.Unlocked {
+				data.UnlockedBadges++
+			}
 		}
 	}
 

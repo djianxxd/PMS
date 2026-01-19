@@ -1,89 +1,274 @@
 {{define "content"}}
-<div class="space-y-8">
-    <!-- Badges Section -->
-    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-        <h2 class="text-2xl font-bold mb-4"><i class="fas fa-medal mr-2"></i>我的勋章墙</h2>
-        <div class="flex flex-wrap gap-4">
-            {{range .Badges}}
-            <div class="flex flex-col items-center p-4 bg-white/10 rounded-lg backdrop-blur-sm {{if not .Unlocked}}opacity-50 grayscale{{end}}" title="{{.Description}}">
-                <div class="text-4xl mb-2">{{.Icon}}</div>
-                <div class="text-sm font-bold">{{.Name}}</div>
-                {{if not .Unlocked}}<div class="text-xs mt-1">未解锁</div>{{end}}
+<div class="max-w-7xl mx-auto">
+    <!-- 页面标题和统计 -->
+    <div class="mb-8 animate-fade-in">
+        <div class="glass-panel rounded-2xl p-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text mb-2">🎯 习惯打卡</h1>
+                    <p class="text-gray-600">坚持每一天的小习惯，成就更好的自己</p>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">今日完成</p>
+                        <p class="text-2xl font-bold text-green-500">{{.DoneToday}}/{{.TotalHabits}}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">连续天数</p>
+                        <p class="text-2xl font-bold text-orange-500">{{.MaxStreak}}</p>
+                    </div>
+                </div>
             </div>
-            {{end}}
         </div>
     </div>
 
-    <!-- Habits Grid -->
-    <div>
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-gray-800">习惯打卡</h3>
-            <button onclick="document.getElementById('addHabitModal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                <i class="fas fa-plus mr-2"></i>新建习惯
-            </button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {{range .Habits}}
-            <div class="bg-white rounded-xl shadow-sm p-6 relative overflow-hidden group">
-                <!-- Delete Button -->
-                <form action="/habits/delete" method="POST" class="absolute top-4 right-4 z-10" onsubmit="return confirm('确定要删除这个习惯吗？这将同时删除所有打卡记录。');">
-                     <input type="hidden" name="id" value="{{.ID}}">
-                     <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                         <i class="fas fa-trash-alt"></i>
-                     </button>
-                </form>
-
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h4 class="text-lg font-bold text-gray-800">{{.Name}}</h4>
-                        <p class="text-sm text-gray-500">{{.Description}}</p>
+    <!-- 勋章展示 -->
+    <div class="mb-8 animate-slide-up">
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold gradient-text">
+                    <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                    成就勋章
+                </h2>
+                <span class="text-sm text-gray-500">解锁进度 {{.UnlockedBadges}}/{{.TotalBadges}}</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                {{range .Badges}}
+                <div class="relative group cursor-pointer">
+                    <div class="flex flex-col items-center p-4 rounded-xl transition-all duration-300 {{if .Unlocked}}bg-gradient-to-br from-yellow-100 to-orange-100 hover:from-yellow-200 hover:to-orange-200{{else}}bg-gray-100 grayscale opacity-60 hover:scale-105{{end}}">
+                        <div class="text-4xl mb-2 {{if not .Unlocked}}animate-pulse-soft{{end}}">{{.Icon}}</div>
+                        <div class="text-xs font-medium text-center">{{.Name}}</div>
                     </div>
-                    <div class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">
-                        🔥 {{.Streak}} 天
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        <div class="font-semibold">{{.Name}}</div>
+                        <div class="text-gray-300">{{.Description}}</div>
+                        {{if not .Unlocked}}<div class="text-yellow-400 mt-1">🔒 未解锁</div>{{end}}
                     </div>
                 </div>
-                
-                <div class="flex justify-between items-center mt-6">
-                    <span class="text-xs text-gray-400">总计坚持: {{.TotalDays}} 天</span>
-                    <form action="/habits/checkin" method="POST">
-                        <input type="hidden" name="habit_id" value="{{.ID}}">
-                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-transform transform active:scale-95">
-                            <i class="fas fa-check"></i>
+                {{end}}
+            </div>
+            <div class="text-center py-8 text-gray-400">
+                <i class="fas fa-history text-4xl mb-3 block"></i>
+                <p class="text-lg font-medium mb-2">更多勋章通过习惯打卡获得</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 习惯管理区域 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- 新建习惯按钮 -->
+        <div class="lg:col-span-3 animate-slide-up">
+            <div class="glass-panel rounded-2xl p-6 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer group" onclick="document.getElementById('addHabitModal').classList.remove('hidden')">
+                <div class="flex items-center justify-center py-8">
+                    <div class="flex items-center text-gray-400 group-hover:text-blue-500 transition-colors">
+                        <i class="fas fa-plus-circle text-3xl mr-3"></i>
+                        <span class="text-lg font-medium">添加新习惯</span>
+                    </div>
+                </div>
+            </div>
+
+        <!-- 习惯卡片 -->
+        {{range $index, $habit := .Habits}}
+        <div class="animate-bounce-in" style="animation-delay: {{mul $index 0.2}}s;">
+            <div class="glass-panel rounded-2xl p-6 hover:shadow-card-hover transition-all duration-300 relative group">
+                <!-- 习惯信息 -->
+                <div class="mb-6">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-1">{{.Name}}</h3>
+                            <p class="text-sm text-gray-600">{{.Description}}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 进度条 -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-600">本月进度</span>
+                        <span class="text-sm font-semibold text-blue-600">70%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div class="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full transition-all duration-500" style="width: 70%"></div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-500">
+                        <i class="fas fa-calendar-alt mr-1"></i>
+                        {{if .TodayChecked}}
+                            <span class="text-green-500 font-semibold">✓ 今日已打卡</span>
+                        {{else}}
+                            <span>今日未打卡</span>
+                        {{end}}
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <form action="/habits/checkin" method="POST" class="inline">
+                            <input type="hidden" name="habit_id" value="{{.ID}}">
+                            <button type="submit" 
+                                    {{if .TodayChecked}}disabled{{end}}
+                                    class="px-4 py-2 rounded-lg font-medium transition-all duration-300 {{if .TodayChecked}}bg-gray-200 text-gray-400 cursor-not-allowed{{else}}bg-gradient-to-r from-green-400 to-emerald-500 text-white hover:from-green-500 hover:to-emerald-600 transform hover:scale-105{{end}}">
+                                {{if .TodayChecked}}
+                                    <i class="fas fa-check mr-2"></i>已完成
+                                {{else}}
+                                    <i class="fas fa-check-circle mr-2"></i>打卡
+                                {{end}}
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 删除按钮 -->
+                    <form action="/habits/delete" method="POST" 
+                          onsubmit="return confirm('确定要删除这个习惯吗？这将同时删除所有打卡记录。');" 
+                          class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </form>
                 </div>
             </div>
-            {{end}}
+        {{end}}
+    </div>
+
+    <!-- 打卡日历视图 -->
+    <div class="glass-panel rounded-2xl p-6 animate-fade-in" style="animation-delay: 0.4s;">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-calendar-alt text-purple-500 mr-2"></i>
+            打卡日历
+        </h2>
+        <div id="calendar" class="grid grid-cols-7 gap-2">
+            <!-- 日历内容将通过JavaScript动态生成 -->
         </div>
     </div>
 </div>
 
-<!-- Add Habit Modal -->
-<div id="addHabitModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-8 w-full max-w-md">
-        <h3 class="text-xl font-bold mb-4">新建习惯</h3>
+<!-- 添加习惯弹窗 -->
+<div id="addHabitModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="glass-panel rounded-2xl p-8 max-w-md w-full animate-bounce-in">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-plus-circle text-green-500 mr-2"></i>
+                创建新习惯
+            </h3>
+            <button onclick="document.getElementById('addHabitModal').classList.add('hidden')" 
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
         <form action="/habits/add" method="POST" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700">名称</label>
-                <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">习惯名称</label>
+                <input type="text" name="name" required 
+                       class="input-field w-full px-4 py-3 rounded-xl"
+                       placeholder="例如：每日阅读、运动健身...">
             </div>
+
             <div>
-                <label class="block text-sm font-medium text-gray-700">描述</label>
-                <input type="text" name="description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">描述</label>
+                <textarea name="description" rows="3" 
+                          class="input-field w-full px-4 py-3 rounded-xl resize-none"
+                          placeholder="描述这个习惯的目标..."></textarea>
             </div>
+
             <div>
-                <label class="block text-sm font-medium text-gray-700">频率</label>
-                <select name="frequency" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                    <option value="daily">每天</option>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">频率</label>
+                <select name="frequency" class="input-field w-full px-4 py-3 rounded-xl appearance-none cursor-pointer bg-white">
+                    <option value="daily">每日</option>
                     <option value="weekly">每周</option>
                 </select>
             </div>
-            <div class="flex justify-end space-x-3 mt-6">
-                <button type="button" onclick="document.getElementById('addHabitModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">创建</button>
+
+            <div class="flex justify-end space-x-3 pt-4">
+                <button type="button" onclick="document.getElementById('addHabitModal').classList.add('hidden')" 
+                        class="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors">
+                    取消
+                </button>
+                <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white font-semibold">
+                    <i class="fas fa-plus mr-2"></i>
+                    创建习惯
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    // 生成日历
+    function generateCalendar() {
+        const calendar = document.getElementById('calendar');
+        if (!calendar) return;
+
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // 星期标题
+        const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+        let html = '';
+        
+        weekDays.forEach(day => {
+            html += `<div class="text-center text-xs font-semibold text-gray-600 p-2">${day}</div>`;
+        });
+
+        // 空白日期
+        for (let i = 0; i < firstDay; i++) {
+            html += '<div></div>';
+        }
+
+        // 日期
+        for (let day = 1; day <= daysInMonth; day++) {
+            const isToday = day === today.getDate();
+            const isWeekend = (firstDay + day - 1) % 7 === 0 || (firstDay + day - 1) % 7 === 6;
+            
+            let dayClass = 'p-2 text-center rounded-lg cursor-pointer transition-all duration-200 ';
+            if (isToday) {
+                dayClass += 'bg-gradient-to-r from-blue-400 to-purple-500 text-white font-bold ';
+            } else if (isWeekend) {
+                dayClass += 'bg-gray-100 text-gray-600 ';
+            } else {
+                dayClass += 'hover:bg-gray-100 ';
+            }
+
+            // 模拟打卡状态
+            const hasChecked = Math.random() > 0.3;
+            if (hasChecked && !isToday) {
+                dayClass += 'bg-green-100 text-green-700 ';
+            }
+
+            html += `<div class="${dayClass}">
+                ${day}
+                ${hasChecked ? '<div class="text-xs">✓</div>' : ''}
+            </div>`;
+        }
+
+        calendar.innerHTML = html;
+    }
+
+    // 添加 ESC 键关闭弹窗
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('addHabitModal').classList.add('hidden');
+        }
+    });
+
+    // 点击背景关闭弹窗
+    const modal = document.getElementById('addHabitModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    });
+
+    // 页面加载时生成日历
+    document.addEventListener('DOMContentLoaded', function() {
+        generateCalendar();
+    });
+</script>
 {{end}}

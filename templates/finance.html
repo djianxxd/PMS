@@ -1,106 +1,285 @@
 {{define "content"}}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-1">
-        <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">记一笔</h3>
-            <form action="/finance/add" method="POST" class="space-y-4">
+<div class="max-w-7xl mx-auto">
+    <!-- 页面标题 -->
+    <div class="mb-8 animate-fade-in">
+        <div class="glass-panel rounded-2xl p-6">
+            <div class="flex items-center justify-between">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">类型</label>
-                    <div class="flex mt-1 space-x-4">
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="expense" checked class="text-red-600 focus:ring-red-500">
-                            <span class="ml-2">支出</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="type" value="income" class="text-green-600 focus:ring-green-500">
-                            <span class="ml-2">收入</span>
-                        </label>
+                    <h1 class="text-3xl font-bold gradient-text mb-2">💰 收支管理</h1>
+                    <p class="text-gray-600">记录每一笔收支，掌控财务状况</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">本月支出</p>
+                        <p class="text-xl font-bold text-red-500">¥{{printf "%.2f" .MonthlyExpense}}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">本月收入</p>
+                        <p class="text-xl font-bold text-green-500">¥{{printf "%.2f" .MonthlyIncome}}</p>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">金额</label>
-                    <input type="number" step="0.01" name="amount" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">分类</label>
-                    <select name="category_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-                        <option value="">请选择分类...</option>
-                        {{range .Categories}}
-                            {{if eq .Type "expense"}}
-                                <option value="{{.ID}}" style="color: {{.Color}}">{{.Icon}} {{.Name}}</option>
-                            {{end}}
-                        {{end}}
-                        {{range .Categories}}
-                            {{if eq .Type "income"}}
-                                <option value="{{.ID}}" style="color: {{.Color}}">{{.Icon}} {{.Name}}</option>
-                            {{end}}
-                        {{end}}
-                        <option value="custom" style="color: #6B7280; font-style: italic;">✏️ 自定义分类</option>
-                    </select>
-                    <input type="text" name="custom_category" placeholder="或输入自定义分类..." class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-                    <p class="text-xs text-gray-500 mt-1">输入自定义分类会自动保存</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">备注</label>
-                    <input type="text" name="note" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">保存</button>
-            </form>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">目标进度</h3>
-            <p class="text-gray-500 text-sm">暂无目标，可在设置中添加收支目标。</p>
+            </div>
         </div>
     </div>
 
-    <div class="lg:col-span-2">
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-gray-100">
-                <h3 class="text-lg font-bold text-gray-800">近期明细</h3>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 记账表单 -->
+        <div class="lg:col-span-1">
+            <div class="glass-panel rounded-2xl p-6 animate-slide-up sticky top-6">
+                <div class="flex items-center mb-6">
+                    <div class="p-3 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 text-white mr-4">
+                        <i class="fas fa-edit text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">记一笔</h2>
+                        <p class="text-sm text-gray-600">快速记录收支明细</p>
+                    </div>
+                </div>
+
+                <form action="/finance/add" method="POST" class="space-y-5">
+                    <!-- 类型选择 -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">收支类型</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="relative">
+                                <input type="radio" name="type" value="expense" checked class="peer sr-only">
+                                <div class="p-4 rounded-xl border-2 border-gray-200 cursor-pointer transition-all peer-checked:border-red-400 peer-checked:bg-red-50 hover:border-red-300">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fas fa-arrow-up text-2xl mb-2 text-red-500"></i>
+                                        <span class="font-medium">支出</span>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="relative">
+                                <input type="radio" name="type" value="income" class="peer sr-only">
+                                <div class="p-4 rounded-xl border-2 border-gray-200 cursor-pointer transition-all peer-checked:border-green-400 peer-checked:bg-green-50 hover:border-green-300">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fas fa-arrow-down text-2xl mb-2 text-green-500"></i>
+                                        <span class="font-medium">收入</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 金额输入 -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">金额</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">¥</span>
+                            <input type="number" step="0.01" name="amount" required 
+                                   class="input-field w-full pl-10 pr-4 py-3 rounded-xl border-2 border-transparent focus:border-blue-400 text-lg font-semibold"
+                                   placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <!-- 分类选择 -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">分类</label>
+                        <select name="category_id" class="input-field w-full px-4 py-3 rounded-xl appearance-none cursor-pointer bg-white">
+                            <option value="">选择分类...</option>
+                            {{range .Categories}}
+                                {{if eq .Type "expense"}}
+                                    <option value="{{.ID}}" class="text-red-600">🔴 {{.Name}}</option>
+                                {{end}}
+                                {{if eq .Type "income"}}
+                                    <option value="{{.ID}}" class="text-green-600">🟢 {{.Name}}</option>
+                                {{end}}
+                            {{end}}
+                            <option value="custom" class="text-purple-600">🟣 自定义分类</option>
+                        </select>
+                        <div class="mt-3">
+                            <input type="text" name="custom_category" 
+                                   class="input-field w-full px-4 py-2 rounded-xl text-sm"
+                                   placeholder="✏️ 输入自定义分类名称...">
+                            <p class="text-xs text-gray-500 mt-1">
+                                <i class="fas fa-lightbulb text-yellow-500"></i> 
+                                自定义分类会自动保存
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 备注输入 -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">备注</label>
+                        <textarea name="note" rows="3" 
+                                  class="input-field w-full px-4 py-3 rounded-xl resize-none"
+                                  placeholder="添加备注信息..."></textarea>
+                    </div>
+
+                    <!-- 提交按钮 -->
+                    <button type="submit" class="btn-primary w-full py-4 rounded-xl text-white font-semibold text-lg shadow-lg">
+                        <i class="fas fa-save mr-2"></i>
+                        保存记录
+                    </button>
+                </form>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-sm">
-                            <th class="p-4">日期</th>
-                            <th class="p-4">分类</th>
-                            <th class="p-4">备注</th>
-                            <th class="p-4 text-right">金额</th>
-                            <th class="p-4"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        {{range .Transactions}}
-                        <tr class="hover:bg-gray-50">
-                            <td class="p-4 text-gray-600">{{.Date.Format "2006-01-02"}}</td>
-                            <td class="p-4">
-                                <span class="px-2 py-1 text-xs rounded-full {{if eq .Type "income"}}bg-green-100 text-green-700{{else}}bg-red-100 text-red-700{{end}}">
-                                    {{.Category}}
-                                </span>
-                            </td>
-                            <td class="p-4 text-gray-600">{{.Note}}</td>
-                            <td class="p-4 text-right font-medium {{if eq .Type "income"}}text-green-600{{else}}text-red-600{{end}}">
-                                {{if eq .Type "income"}}+{{else}}-{{end}}¥{{printf "%.2f" .Amount}}
-                            </td>
-                            <td class="p-4 text-right">
-                                <form action="/finance/delete" method="POST" onsubmit="return confirm('确定要删除这条记录吗？');">
-                                    <input type="hidden" name="id" value="{{.ID}}">
-                                    <button type="submit" class="text-gray-400 hover:text-red-500">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {{else}}
-                        <tr>
-                            <td colspan="5" class="p-8 text-center text-gray-500">暂无记录</td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
+
+            <!-- 目标进度 -->
+            <div class="glass-panel rounded-2xl p-6 mt-6 animate-slide-up" style="animation-delay: 0.2s;">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-bullseye text-purple-500 mr-2"></i>
+                    月度目标
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">预算进度</span>
+                        <span class="text-sm font-semibold">68%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div class="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full" style="width: 68%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500">已使用 ¥0.00 / ¥0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 交易记录 -->
+        <div class="lg:col-span-2">
+            <div class="glass-panel rounded-2xl overflow-hidden animate-fade-in" style="animation-delay: 0.3s;">
+                <div class="p-6 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-list text-blue-500 mr-2"></i>
+                            交易记录
+                        </h3>
+                        <div class="flex items-center space-x-3">
+                            <button class="px-4 py-2 text-sm bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
+                                <i class="fas fa-filter mr-1"></i>筛选
+                            </button>
+                            <button class="px-4 py-2 text-sm bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors">
+                                <i class="fas fa-download mr-1"></i>导出
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+                                <th class="px-6 py-4 text-left">日期</th>
+                                <th class="px-6 py-4 text-left">分类</th>
+                                <th class="px-6 py-4 text-left">备注</th>
+                                <th class="px-6 py-4 text-right">金额</th>
+                                <th class="px-6 py-4 text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .Transactions}}
+                            <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <div class="text-gray-600">{{.Date.Format "2006-01-02"}}</div>
+                                    <div class="text-xs text-gray-400">{{.Date.Format "15:04"}}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{if eq .Type "income"}}bg-green-100 text-green-700{{else}}bg-red-100 text-red-700{{end}}">
+                                        {{if eq .Type "income"}}<i class="fas fa-arrow-down mr-1"></i>{{else}}<i class="fas fa-arrow-up mr-1"></i>{{end}}
+                                        {{.Category}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-gray-600">{{.Note}}</div>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="font-semibold text-lg {{if eq .Type "income"}}text-green-500{{else}}text-red-500{{end}}">
+                                        {{if eq .Type "income"}}+{{else}}-{{end}}¥{{printf "%.2f" .Amount}}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form action="/finance/delete" method="POST" onsubmit="return confirm('确定要删除这条记录吗？');" class="inline">
+                                            <input type="hidden" name="id" value="{{.ID}}">
+                                            <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{else}}
+                            <tr>
+                                <td colspan="5" class="px-6 py-16 text-center">
+                                    <div class="text-gray-400">
+                                        <i class="fas fa-inbox text-6xl mb-4 block"></i>
+                                        <p class="text-lg font-medium">暂无记录</p>
+                                        <p class="text-sm mt-2">开始记录您的第一笔收支吧！</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                {{if gt (len .Transactions) 0}}
+                <div class="p-4 border-t border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            显示 1-10 条，共 {{len .Transactions}} 条记录
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg">1</span>
+                            <button class="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+                                2
+                            </button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {{end}}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // 添加表格行动画
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach((row, index) => {
+            row.style.animationDelay = `${0.1 * index}s`;
+            row.classList.add('animate-slide-up');
+        });
+    });
+
+    // 金额输入格式化
+    const amountInput = document.querySelector('input[name="amount"]');
+    if (amountInput) {
+        amountInput.addEventListener('input', function(e) {
+            let value = e.target.value;
+            // 允许数字和小数点
+            value = value.replace(/[^\d.]/g, '');
+            // 限制只能有一个小数点
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            e.target.value = value;
+        });
+    }
+
+    // 快速记账快捷键
+    document.addEventListener('keydown', function(e) {
+        // Alt + E: 快速记录支出
+        if (e.altKey && e.key === 'e') {
+            document.querySelector('input[value="expense"]').checked = true;
+            amountInput?.focus();
+        }
+        // Alt + I: 快速记录收入
+        if (e.altKey && e.key === 'i') {
+            document.querySelector('input[value="income"]').checked = true;
+            amountInput?.focus();
+        }
+    });
+</script>
 {{end}}
