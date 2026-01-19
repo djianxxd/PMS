@@ -1,0 +1,93 @@
+{{define "content"}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Add Transaction Form -->
+    <div class="lg:col-span-1">
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">记一笔</h3>
+            <form action="/finance/add" method="POST" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">类型</label>
+                    <div class="flex mt-1 space-x-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="type" value="expense" checked class="text-red-600 focus:ring-red-500">
+                            <span class="ml-2">支出</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="type" value="income" class="text-green-600 focus:ring-green-500">
+                            <span class="ml-2">收入</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">金额</label>
+                    <input type="number" step="0.01" name="amount" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">分类</label>
+                    <input type="text" name="category" placeholder="餐饮, 交通, 工资..." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">备注</label>
+                    <input type="text" name="note" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">保存</button>
+            </form>
+        </div>
+
+        <!-- Goals Section -->
+        <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">目标进度</h3>
+            {{range .Goals}}
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-600">{{.Type}} Goal</span>
+                    <span class="font-medium">¥{{printf "%.0f" .CurrentAmount}} / ¥{{printf "%.0f" .TargetAmount}}</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{printf "%.0f" (call $.CalcPercentage .CurrentAmount .TargetAmount)}}%"></div>
+                </div>
+            </div>
+            {{else}}
+            <p class="text-gray-500 text-sm">暂无目标，请在设置中添加。</p>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Transaction List -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">近期明细</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-sm">
+                            <th class="p-4">日期</th>
+                            <th class="p-4">分类</th>
+                            <th class="p-4">备注</th>
+                            <th class="p-4 text-right">金额</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {{range .Transactions}}
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-4 text-gray-600">{{.Date.Format "2006-01-02"}}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 text-xs rounded-full {{if eq .Type "income"}}bg-green-100 text-green-700{{else}}bg-red-100 text-red-700{{end}}">
+                                    {{.Category}}
+                                </span>
+                            </td>
+                            <td class="p-4 text-gray-600">{{.Note}}</td>
+                            <td class="p-4 text-right font-medium {{if eq .Type "income"}}text-green-600{{else}}text-red-600{{end}}">
+                                {{if eq .Type "income"}}+{{else}}-{{end}}¥{{printf "%.2f" .Amount}}
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
