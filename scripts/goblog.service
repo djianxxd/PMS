@@ -1,0 +1,55 @@
+[Unit]
+Description=GoBlog - 个人生活管理系统
+Documentation=https://github.com/your-username/goblog
+After=network.target
+Wants=network.target
+
+[Service]
+# 服务类型
+Type=simple
+
+# 用户和组
+User=goblog
+Group=goblog
+
+# 工作目录
+WorkingDirectory=/opt/goblog
+
+# 执行命令
+ExecStart=/opt/goblog/goblog
+ExecReload=/bin/kill -HUP $MAINPID
+
+# 重启策略
+Restart=always
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+# 环境变量
+Environment=GIN_MODE=release
+Environment=GOBLOG_ENV=production
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/goblog/data /var/log/goblog
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# 日志设置
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=goblog
+
+# 进程管理
+PIDFile=/var/run/goblog.pid
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
