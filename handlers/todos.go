@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// TodosHandler renders the todos page
+// TodosHandler renders todos page
 func TodosHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		ActivePage    string
@@ -77,7 +77,7 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 	// 验证内容不为空
 	if strings.TrimSpace(content) == "" {
 		log.Printf("❌ 待办事项内容为空")
-		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		http.Error(w, "任务内容不能为空", http.StatusBadRequest)
 		return
 	}
 
@@ -109,32 +109,38 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("ℹ️ 未设置截止时间")
 	}
 
+	// 日期验证：如果设置了截止时间，必须是未来时间
+	if dueDateToInsert != nil {
+		now := time.Now()
+		if dueDate.Before(now) {
+			// 严格验证：截止时间不能早于当前时间
+			log.Printf("❌ 截止时间不能早于当前时间: 截止时间=%s, 当前时间=%s", dueDate.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05"))
+			http.Error(w, "截止时间必须是未来时间", http.StatusBadRequest)
+			return
+		} else {
+			// 检查是否设置得过近（比如只差几秒，可能误操作）
+			duration := dueDate.Sub(now)
+			if duration < time.Minute {
+				log.Printf("⚠️ 截止时间设置过近: 截止时间=%s, 当前时间=%s, 相差=%s", dueDate.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05"), duration)
+				http.Error(w, "截止时间设置过近，请选择一个合理的未来时间", http.StatusBadRequest)
+				return
+			} else {
+				log.Printf("✅ 日期验证通过: 截止时间=%s", dueDate.Format("2006-01-02 15:04:05"))
+			}
+		}
+	} else {
+		log.Printf("ℹ️ 未设置截止时间")
+	}
+
 	// 插入到数据库
-	result, err := db.DB.Exec("INSERT INTO todos (content, due_date) VALUES (?, ?)", content, dueDateToInsert)
+	_, err := db.DB.Exec("INSERT INTO todos (content, due_date) VALUES (?, ?)", content, dueDateToInsert)
 	if err != nil {
 		log.Printf("❌ 插入待办事项失败: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 获取插入的ID进行验证
-	if id, err := result.LastInsertId(); err == nil {
-		log.Printf("✅ 成功插入待办事项，ID: %d", id)
-
-		// 验证插入的数据
-		var verifyContent string
-		var verifyDueDate sql.NullTime
-		err := db.DB.QueryRow("SELECT content, due_date FROM todos WHERE id = ?", id).Scan(&verifyContent, &verifyDueDate)
-		if err == nil {
-			if verifyDueDate.Valid {
-				log.Printf("✅ 验证成功: 内容='%s', 截止时间=%s", verifyContent, verifyDueDate.Time.Format("2006-01-02 15:04:05"))
-			} else {
-				log.Printf("✅ 验证成功: 内容='%s', 无截止时间", verifyContent)
-			}
-		}
-	}
-
-	log.Printf("🔄 重定向到待办事项页面")
+	// 重定向到待办事项页面
 	http.Redirect(w, r, "/todos", http.StatusSeeOther)
 }
 
@@ -189,6 +195,30 @@ func CheckinTodoHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/todos", http.StatusSeeOther)
 }
 
+// DeleteTodoHandler deletes a todo
+func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
+	id, _ := strconv.Atoi(r.FormValue("id"))
+
+	// 先删除相关的打卡记录
+	_, err := db.DB.Exec("DELETE FROM todo_checkins WHERE todo_id = ?", id)
+	if err != nil {
+		log.Printf("Error deleting todo checkins: %v", err)
+	}
+
+	// 删除todo
+	_, err = db.DB.Exec("DELETE FROM todos WHERE id = ?", id)
+	if err != nil {
+		log.Printf("Error deleting todo: %v", err)
+	}
+
+	http.Redirect(w, r, "/todos", http.StatusSeeOther)
+}
+
 // TodoCheckinsHandler shows detailed checkin history for a todo
 func TodoCheckinsHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
@@ -217,11 +247,6 @@ func TodoCheckinsHandler(w http.ResponseWriter, r *http.Request) {
 	// 获取todo信息
 	err = db.DB.QueryRow("SELECT id, content, status, due_date FROM todos WHERE id = ?", todoID).Scan(
 		&data.Todo.ID, &data.Todo.Content, &data.Todo.Status, &data.Todo.DueDate)
-	if err != nil {
-		log.Printf("Error fetching todo: %v", err)
-		http.Redirect(w, r, "/todos", http.StatusSeeOther)
-		return
-	}
 
 	// 获取打卡记录
 	rows, err := db.DB.Query("SELECT id, checkin_date FROM todo_checkins WHERE todo_id = ? ORDER BY checkin_date DESC LIMIT 50", todoID)
@@ -240,28 +265,4 @@ func TodoCheckinsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, "todo_checkins.html", data)
-}
-
-// DeleteTodoHandler deletes a todo
-func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/todos", http.StatusSeeOther)
-		return
-	}
-
-	id, _ := strconv.Atoi(r.FormValue("id"))
-
-	// 先删除相关的打卡记录
-	_, err := db.DB.Exec("DELETE FROM todo_checkins WHERE todo_id = ?", id)
-	if err != nil {
-		log.Printf("Error deleting todo checkins: %v", err)
-	}
-
-	// 删除todo
-	_, err = db.DB.Exec("DELETE FROM todos WHERE id = ?", id)
-	if err != nil {
-		log.Printf("Error deleting todo: %v", err)
-	}
-
-	http.Redirect(w, r, "/todos", http.StatusSeeOther)
 }
