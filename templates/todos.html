@@ -1,55 +1,142 @@
 {{define "content"}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-    <!-- Add Todo -->
-    <div class="bg-white p-6 rounded-xl shadow-sm h-fit">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">添加待办</h3>
-        <form action="/todos/add" method="POST" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">内容</label>
-                <input type="text" name="content" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700">截止日期</label>
-                <input type="datetime-local" name="due_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">添加任务</button>
-        </form>
-    </div>
 
-    <!-- Todo List -->
-    <div class="space-y-4">
-        <h3 class="text-lg font-bold text-gray-800">任务列表</h3>
-        {{range .Todos}}
-        <div class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between group {{if eq .Status "completed"}}opacity-60 bg-gray-50{{end}}">
-            <div class="flex items-center space-x-3">
-                <form action="/todos/toggle" method="POST">
-                    <input type="hidden" name="id" value="{{.ID}}">
-                    <button type="submit" class="w-6 h-6 rounded border-2 flex items-center justify-center {{if eq .Status "completed"}}bg-blue-500 border-blue-500 text-white{{else}}border-gray-300 text-transparent hover:border-blue-500{{end}}">
-                        <i class="fas fa-check text-xs"></i>
-                    </button>
-                </form>
-                <div>
-                    <p class="font-medium {{if eq .Status "completed"}}line-through text-gray-500{{else}}text-gray-800{{end}}">{{.Content}}</p>
-                    {{if not .DueDate.IsZero}}
-                    <p class="text-xs {{if eq .Status "completed"}}text-gray-400{{else}}text-blue-500{{end}}">
-                        <i class="far fa-clock mr-1"></i>{{.DueDate.Format "2006-01-02 15:04"}}
-                    </p>
-                    {{end}}
+            <!-- 统计信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="glass-panel rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">总任务</p>
+                            <p class="text-2xl font-bold text-gray-800">{{.TotalCount}}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-list text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">待完成</p>
+                            <p class="text-2xl font-bold text-yellow-600">
+                                {{.PendingCount}}
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-6 hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm">已完成</p>
+                            <p class="text-2xl font-bold text-green-600">
+                                {{.DoneCount}}
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check-circle text-white"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <form action="/todos/delete" method="POST" onsubmit="return confirm('确定要删除这个任务吗？');">
-                <input type="hidden" name="id" value="{{.ID}}">
-                <button type="submit" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="删除任务">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </form>
+
+            <!-- 添加任务表单 -->
+            <div class="glass-panel rounded-2xl p-6 mb-8 animate-bounce-in" style="animation-delay: 0.2s;">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-plus-circle mr-2"></i>添加新任务
+                </h2>
+                <form action="/todos/add" method="POST" class="flex flex-col md:flex-row gap-4">
+                    <input type="text" 
+                           name="content" 
+                           placeholder="输入任务内容..." 
+                           required
+                           class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all">
+                    <input type="datetime-local" 
+                           name="due_date" 
+                           class="px-4 py-3 rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i>添加任务
+                    </button>
+                </form>
+            </div>
+
+            <!-- 任务列表 -->
+            <div class="glass-panel rounded-2xl p-6 animate-bounce-in" style="animation-delay: 0.4s;">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-list-ul mr-2"></i>任务列表
+                </h2>
+                
+                {{if .Todos}}
+                <div class="space-y-4">
+                    {{range $index, $todo := .Todos}}
+                    <div class="todo-item bg-white rounded-lg p-4 shadow-sm hover:shadow-md {{if eq $todo.Status "completed"}}todo-completed{{end}}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4 flex-1">
+                                <form action="/todos/toggle" method="POST" class="inline">
+                                    <input type="hidden" name="id" value="{{$todo.ID}}">
+                                    <button type="submit" class="text-2xl {{if eq $todo.Status "completed"}}text-green-500{{else}}text-gray-400{{end}} hover:scale-110 transition-transform">
+                                        <i class="fas {{if eq $todo.Status "completed"}}fa-check-circle{{else}}fa-circle{{end}}"></i>
+                                    </button>
+                                </form>
+                                <div class="flex-1">
+                                    <p class="text-lg font-medium text-gray-800">{{$todo.Content}}</p>
+                                    {{if $todo.DueDate}}
+                                    <p class="text-sm text-gray-500">
+                                        <i class="fas fa-calendar-alt mr-1"></i>
+                                        截止时间：{{$todo.DueDate.Format "2006-01-02 15:04"}}
+                                    </p>
+                                    {{end}}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="px-3 py-1 rounded-full text-xs font-medium
+                                    {{if eq $todo.Status "pending"}}bg-yellow-100 text-yellow-800{{else}}bg-green-100 text-green-800{{end}}">
+                                    {{if eq $todo.Status "pending"}}待完成{{else}}已完成{{end}}
+                                </span>
+                                <form action="/todos/delete" method="POST" class="inline">
+                                    <input type="hidden" name="id" value="{{$todo.ID}}">
+                                    <button type="submit" class="text-red-500 hover:text-red-700 hover:scale-110 transition-all"
+                                            onclick="return confirm('确定要删除这个任务吗？')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+                {{else}}
+                <div class="text-center py-12">
+                    <div class="text-6xl text-gray-300 mb-4">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <p class="text-gray-500 text-lg">暂无任务</p>
+                    <p class="text-gray-400 text-sm mt-2">添加您的第一个任务开始管理吧！</p>
+                </div>
+                {{end}}
+            </div>
         </div>
-        {{else}}
-        <div class="text-center py-10 text-gray-500">
-            <i class="fas fa-clipboard-check text-4xl mb-3 opacity-30"></i>
-            <p>暂无任务，享受当下！</p>
-        </div>
-        {{end}}
     </div>
-</div>
+
+    <script>
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.animate-bounce-in');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(20px)';
+                    el.style.animation = 'bounceIn 0.5s ease-out forwards';
+                }, index * 100);
+            });
+        });
+
+        // 自动刷新（可选）
+        setInterval(() => {
+            // 可以在这里添加自动刷新逻辑
+        }, 60000); // 每分钟刷新一次
+    </script>
 {{end}}

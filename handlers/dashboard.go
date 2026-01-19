@@ -10,7 +10,40 @@ import (
 )
 
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
-	t, err := template.ParseFiles("templates/layout.html", "templates/"+tmpl)
+	// 添加模板函数
+	funcMap := template.FuncMap{
+		"mul": func(a, b interface{}) float64 {
+			var aVal, bVal float64
+			switch v := a.(type) {
+			case int:
+				aVal = float64(v)
+			case float64:
+				aVal = v
+			}
+			switch v := b.(type) {
+			case int:
+				bVal = float64(v)
+			case float64:
+				bVal = v
+			}
+			return aVal * bVal
+		},
+		"add": func(a, b interface{}) int {
+			var aVal, bVal int
+			switch v := a.(type) {
+			case int:
+				aVal = v
+			}
+			switch v := b.(type) {
+			case int:
+				bVal = v
+			}
+			return aVal + bVal
+		},
+	}
+
+	t := template.New("").Funcs(funcMap)
+	t, err := t.ParseFiles("templates/layout.html", "templates/"+tmpl)
 	if err != nil {
 		log.Printf("Error parsing template %s: %v", tmpl, err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -33,35 +66,79 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		ChartMonths        []string
 		ChartIncome        []float64
 		ChartExpense       []float64
+		TotalCount         int
 		HabitDoneCount     int
 		HabitMissedCount   int
 	}{
 		ActivePage: "dashboard",
 	}
 
-	// Calculate Monthly Income/Expense
+	// Calculate Monthly Income/Expense (从实际数据计算，但由于数据库为空，结果会是0)
 	now := time.Now()
-	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local)
 
-	rows, err := db.DB.Query("SELECT type, amount FROM transactions WHERE date >= ?", startOfMonth)
-	if err != nil {
-		log.Println(err)
+	log.Printf("📊 开始查询统计信息")
+
+	// 首先检查数据库中是否有任何交易记录
+	var totalCount int
+	db.DB.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&totalCount)
+	log.Printf("数据库总交易记录数: %d", totalCount)
+
+	if totalCount == 0 {
+		log.Printf("❌ 数据库中没有交易记录，保持显示0")
+		data.MonthlyIncome = 0
+		data.MonthlyExpense = 0
 	} else {
-		defer rows.Close()
-		for rows.Next() {
-			var tType string
-			var amount float64
-			rows.Scan(&tType, &amount)
-			if tType == "income" {
-				data.MonthlyIncome += amount
+		log.Printf("✅ 数据库中有交易记录，开始查询统计")
+
+		// 暂时不限制日期，查询所有记录来确保能获取到数据
+		err := db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income'").Scan(&data.MonthlyIncome)
+		if err != nil {
+			log.Printf("❌ 查询总收入失败: %v", err)
+			data.MonthlyIncome = 0
+		} else {
+			log.Printf("✅ 总收入查询成功: ¥%.2f", data.MonthlyIncome)
+		}
+
+		err = db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense'").Scan(&data.MonthlyExpense)
+		if err != nil {
+			log.Printf("❌ 查询总支出失败: %v", err)
+			data.MonthlyExpense = 0
+		} else {
+			log.Printf("✅ 总支出查询成功: ¥%.2f", data.MonthlyExpense)
+		}
+
+		// 如果找到了数据，现在尝试按月份查询
+		if data.MonthlyIncome > 0 || data.MonthlyExpense > 0 {
+			log.Printf("✅ 确认有数据，现在按本月查询")
+			startOfMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local)
+
+			var monthlyIncome, monthlyExpense float64
+			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income' AND date >= ?", startOfMonth).Scan(&monthlyIncome)
+			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense' AND date >= ?", startOfMonth).Scan(&monthlyExpense)
+
+			log.Printf("📅 本月统计 - 收入:¥%.2f, 支出:¥%.2f", monthlyIncome, monthlyExpense)
+
+			// 如果本月有数据就用本月的，否则用总数据
+			if monthlyIncome > 0 || monthlyExpense > 0 {
+				data.MonthlyIncome = monthlyIncome
+				data.MonthlyExpense = monthlyExpense
+				log.Printf("✅ 使用本月数据")
 			} else {
-				data.MonthlyExpense += amount
+				log.Printf("⚠️ 本月无数据，使用全部数据")
 			}
 		}
 	}
 
-	// Max Streak
-	db.DB.QueryRow("SELECT MAX(streak) FROM habits").Scan(&data.MaxStreak)
+	log.Printf("📈 最终仪表板显示: 本月收入=¥%.2f, 本月支出=¥%.2f", data.MonthlyIncome, data.MonthlyExpense)
+
+	// Max Streak (从实际数据计算，但由于数据库为空，结果会是0)
+	var maxStreak sql.NullInt64
+	db.DB.QueryRow("SELECT MAX(streak) FROM habits").Scan(&maxStreak)
+	if maxStreak.Valid {
+		data.MaxStreak = int(maxStreak.Int64)
+	} else {
+		data.MaxStreak = 0
+	}
 
 	// Todo Completion Rate
 	var total, completed int
@@ -110,6 +187,7 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	data.HabitDoneCount = doneToday
 	data.HabitMissedCount = totalHabits - doneToday
+	data.TotalCount = totalHabits
 	if data.HabitMissedCount < 0 {
 		data.HabitMissedCount = 0
 	}
