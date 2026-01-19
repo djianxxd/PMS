@@ -76,11 +76,15 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	data.ChartIncome = make([]float64, 6)
 	data.ChartExpense = make([]float64, 6)
 
+	// 中文月份名称
+	chineseMonths := []string{"一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"}
+
 	for i := 0; i < 6; i++ {
 		month := now.AddDate(0, -5+i, 0)
-		data.ChartMonths[i] = month.Format("Jan")
+		data.ChartMonths[i] = chineseMonths[month.Month()-1]
 
 		mStart := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, time.Local)
+
 		mEnd := mStart.AddDate(0, 1, 0)
 
 		var inc, exp sql.NullFloat64
