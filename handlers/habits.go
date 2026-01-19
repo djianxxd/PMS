@@ -1,0 +1,163 @@
+package handlers
+
+import (
+	"goblog/db"
+	"goblog/models"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+)
+
+// HabitsHandler renders the habits page
+func HabitsHandler(w http.ResponseWriter, r *http.Request) {
+	data := struct {
+		ActivePage string
+		Habits     []models.Habit
+		Badges     []models.Badge
+	}{
+		ActivePage: "habits",
+	}
+
+	// Fetch Habits
+	rows, err := db.DB.Query("SELECT id, name, description, frequency, streak, total_days FROM habits")
+	if err != nil {
+		log.Println(err)
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			var h models.Habit
+			rows.Scan(&h.ID, &h.Name, &h.Description, &h.Frequency, &h.Streak, &h.TotalDays)
+			data.Habits = append(data.Habits, h)
+		}
+	}
+
+	// Fetch Badges
+	bRows, err := db.DB.Query("SELECT id, name, description, icon, unlocked FROM badges")
+	if err != nil {
+		log.Println(err)
+	} else {
+		defer bRows.Close()
+		for bRows.Next() {
+			var b models.Badge
+			var unlockedInt int
+			bRows.Scan(&b.ID, &b.Name, &b.Description, &b.Icon, &unlockedInt)
+			b.Unlocked = unlockedInt == 1
+			data.Badges = append(data.Badges, b)
+		}
+	}
+
+	renderTemplate(w, "habits.html", data)
+}
+
+// AddHabitHandler adds a new habit
+func AddHabitHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+
+	name := r.FormValue("name")
+	description := r.FormValue("description")
+	frequency := r.FormValue("frequency")
+
+	_, err := db.DB.Exec("INSERT INTO habits (name, description, frequency) VALUES (?, ?, ?)", name, description, frequency)
+	if err != nil {
+		log.Println("Error adding habit:", err)
+	}
+
+	http.Redirect(w, r, "/habits", http.StatusSeeOther)
+}
+
+// CheckinHabitHandler handles habit check-ins
+func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+
+	habitID, _ := strconv.Atoi(r.FormValue("habit_id"))
+	now := time.Now()
+
+	// Check if already checked in today
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	var count int
+	err := db.DB.QueryRow("SELECT COUNT(*) FROM habit_logs WHERE habit_id = ? AND date >= ?", habitID, startOfDay).Scan(&count)
+	if err != nil {
+		log.Println(err)
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+	if count > 0 {
+		// Already checked in
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+
+	// Record Log
+	_, err = db.DB.Exec("INSERT INTO habit_logs (habit_id, date) VALUES (?, ?)", habitID, now)
+	if err != nil {
+		log.Println("Error log habit:", err)
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+
+	// Update Streak and Total
+	// Basic streak logic: if last log was yesterday (or today), streak continues.
+	// For simplicity, we'll just check if there was a log yesterday.
+
+	yesterday := startOfDay.AddDate(0, 0, -1)
+	var yesterdayCount int
+	db.DB.QueryRow("SELECT COUNT(*) FROM habit_logs WHERE habit_id = ? AND date >= ? AND date < ?", habitID, yesterday, startOfDay).Scan(&yesterdayCount)
+
+	var streak int
+	var totalDays int
+
+	// Get current stats
+	db.DB.QueryRow("SELECT streak, total_days FROM habits WHERE id = ?", habitID).Scan(&streak, &totalDays)
+
+	if yesterdayCount > 0 {
+		streak++
+	} else {
+		streak = 1 // Reset or start new
+	}
+	totalDays++
+
+	_, err = db.DB.Exec("UPDATE habits SET streak = ?, total_days = ? WHERE id = ?", streak, totalDays, habitID)
+	if err != nil {
+		log.Println("Error updating habit:", err)
+	}
+
+	// Check Badges
+	checkBadges(totalDays, streak)
+
+	http.Redirect(w, r, "/habits", http.StatusSeeOther)
+}
+
+func checkBadges(totalDays, streak int) {
+	// Simple logic: check all badges conditions
+	rows, err := db.DB.Query("SELECT id, condition_days, unlocked FROM badges WHERE unlocked = 0")
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id, days int
+		var unlocked int
+		rows.Scan(&id, &days, &unlocked)
+
+		// Logic currently maps any 'days' condition to total_days or streak?
+		// The prompt said "based on completion days", assuming total or streak.
+		// Let's assume the seeded badges use 'condition_days' as a threshold for total_days for now,
+		// or we could split types. Given the seed names "Streak 7 days", let's assume it checks streak if name implies,
+		// but our schema just has `condition_days`.
+		// Let's check both or make it generic: if streak >= condition OR total >= condition.
+		// A better design would have `type` in badge.
+		// For this MVP, if total_days >= days, unlock.
+
+		if totalDays >= days || streak >= days {
+			db.DB.Exec("UPDATE badges SET unlocked = 1 WHERE id = ?", id)
+		}
+	}
+}
