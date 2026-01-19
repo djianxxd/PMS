@@ -67,11 +67,12 @@
                             <th class="p-4">分类</th>
                             <th class="p-4">备注</th>
                             <th class="p-4 text-right">金额</th>
+                            <th class="p-4"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         {{range .Transactions}}
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 group">
                             <td class="p-4 text-gray-600">{{.Date.Format "2006-01-02"}}</td>
                             <td class="p-4">
                                 <span class="px-2 py-1 text-xs rounded-full {{if eq .Type "income"}}bg-green-100 text-green-700{{else}}bg-red-100 text-red-700{{end}}">
@@ -81,6 +82,14 @@
                             <td class="p-4 text-gray-600">{{.Note}}</td>
                             <td class="p-4 text-right font-medium {{if eq .Type "income"}}text-green-600{{else}}text-red-600{{end}}">
                                 {{if eq .Type "income"}}+{{else}}-{{end}}¥{{printf "%.2f" .Amount}}
+                            </td>
+                            <td class="p-4 text-right">
+                                <form action="/finance/delete" method="POST" onsubmit="return confirm('确定要删除这条记录吗？');">
+                                    <input type="hidden" name="id" value="{{.ID}}">
+                                    <button type="submit" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {{end}}
