@@ -6,12 +6,26 @@ import (
 
 // Transaction represents an income or expense
 type Transaction struct {
+	ID         int       `json:"id"`
+	Type       string    `json:"type"` // "income" or "expense"
+	CategoryID int       `json:"category_id"`
+	Category   string    `json:"category"`
+	Amount     float64   `json:"amount"`
+	Date       time.Time `json:"date"`
+	Note       string    `json:"note"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+// Category represents a transaction category
+type Category struct {
 	ID        int       `json:"id"`
-	Type      string    `json:"type"` // "income" or "expense"
-	Amount    float64   `json:"amount"`
-	Category  string    `json:"category"`
-	Date      time.Time `json:"date"`
-	Note      string    `json:"note"`
+	Name      string    `json:"name"`
+	Type      string    `json:"type"`  // "income" or "expense"
+	Icon      string    `json:"icon"`  // emoji or icon class
+	Color     string    `json:"color"` // hex color code
+	IsDefault bool      `json:"is_default"`
+	IsCustom  bool      `json:"is_custom"`
+	SortOrder int       `json:"sort_order"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

@@ -27,19 +27,37 @@ func InitDB() {
 	}
 
 	createTables()
+	migrateDatabase()
 	seedBadges()
+	seedCategories()
+
+	// 验证分类是否成功初始化
+	verifyCategories()
 }
 
 func createTables() {
 	queries := []string{
+		`CREATE TABLE IF NOT EXISTS categories (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			type TEXT NOT NULL,
+			icon TEXT,
+			color TEXT,
+			is_default INTEGER DEFAULT 0,
+			is_custom INTEGER DEFAULT 0,
+			sort_order INTEGER DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		);`,
 		`CREATE TABLE IF NOT EXISTS transactions (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			type TEXT,
-			amount REAL,
+			category_id INTEGER,
 			category TEXT,
+			amount REAL,
 			date DATETIME,
 			note TEXT,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY(category_id) REFERENCES categories(id)
 		);`,
 		`CREATE TABLE IF NOT EXISTS finance_goals (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,5 +131,112 @@ func seedBadges() {
 		if err != nil {
 			log.Println("Error seeding badges:", err)
 		}
+	}
+}
+
+func seedCategories() {
+	// Check if categories exist
+	var count int
+	DB.QueryRow("SELECT COUNT(*) FROM categories").Scan(&count)
+	if count > 0 {
+		return
+	}
+
+	// Default income categories - 更合理的分类
+	incomeCategories := []struct {
+		Name      string
+		Icon      string
+		Color     string
+		SortOrder int
+	}{
+		{"工资收入", "💰", "#10B981", 1},
+		{"奖金福利", "🎁", "#10B981", 2},
+		{"投资理财", "📈", "#10B981", 3},
+		{"副业兼职", "💼", "#10B981", 4},
+		{"经营收入", "🏪", "#10B981", 5},
+		{"其他收入", "💵", "#10B981", 6},
+		{"自定义输入", "✏️", "#6B7280", 999},
+	}
+
+	// Default expense categories - 更详细的分类
+	expenseCategories := []struct {
+		Name      string
+		Icon      string
+		Color     string
+		SortOrder int
+	}{
+		{"餐饮美食", "🍽️", "#EF4444", 1},
+		{"超市购物", "🛒", "#EF4444", 2},
+		{"交通出行", "🚗", "#EF4444", 3},
+		{"休闲娱乐", "🎮", "#EF4444", 4},
+		{"房租房贷", "🏠", "#EF4444", 5},
+		{"水电物业", "💡", "#EF4444", 6},
+		{"医疗保健", "🏥", "#EF4444", 7},
+		{"教育学习", "📚", "#EF4444", 8},
+		{"人情往来", "🎁", "#EF4444", 9},
+		{"运动健身", "🏃", "#EF4444", 10},
+		{"美容护肤", "💄", "#EF4444", 11},
+		{"服饰鞋包", "👔", "#EF4444", 12},
+		{"通讯费用", "📱", "#EF4444", 13},
+		{"其他支出", "📝", "#EF4444", 14},
+		{"自定义输入", "✏️", "#6B7280", 999},
+	}
+
+	// Insert income categories
+	for _, cat := range incomeCategories {
+		_, err := DB.Exec(
+			"INSERT INTO categories (name, type, icon, color, is_default, is_custom, sort_order) VALUES (?, ?, ?, ?, 1, 0, ?)",
+			cat.Name, "income", cat.Icon, cat.Color, cat.SortOrder,
+		)
+		if err != nil {
+			log.Println("Error seeding income categories:", err)
+		}
+	}
+
+	// Insert expense categories
+	for _, cat := range expenseCategories {
+		_, err := DB.Exec(
+			"INSERT INTO categories (name, type, icon, color, is_default, is_custom, sort_order) VALUES (?, ?, ?, ?, 1, 0, ?)",
+			cat.Name, "expense", cat.Icon, cat.Color, cat.SortOrder,
+		)
+		if err != nil {
+			log.Println("Error seeding expense categories:", err)
+		}
+	}
+}
+
+func migrateDatabase() {
+	// Add category_id column to transactions table if it doesn't exist
+	var columnExists bool
+	err := DB.QueryRow(`
+		SELECT COUNT(*) > 0 
+		FROM pragma_table_info('transactions') 
+		WHERE name = 'category_id'
+	`).Scan(&columnExists)
+
+	if err == nil && !columnExists {
+		log.Println("Migrating database: adding category_id column to transactions table")
+		_, err = DB.Exec("ALTER TABLE transactions ADD COLUMN category_id INTEGER")
+		if err != nil {
+			log.Println("Error adding category_id column:", err)
+		}
+	}
+}
+
+func verifyCategories() {
+	// 检查分类数量
+	var count int
+	err := DB.QueryRow("SELECT COUNT(*) FROM categories").Scan(&count)
+	if err != nil {
+		log.Println("Error checking categories:", err)
+		return
+	}
+
+	log.Printf("Database initialized with %d categories", count)
+
+	// 如果没有分类，强制重新初始化
+	if count == 0 {
+		log.Println("No categories found, reinitializing...")
+		seedCategories()
 	}
 }

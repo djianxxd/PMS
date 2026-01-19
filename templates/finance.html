@@ -1,6 +1,5 @@
 {{define "content"}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- Add Transaction Form -->
     <div class="lg:col-span-1">
         <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
             <h3 class="text-lg font-bold text-gray-800 mb-4">记一笔</h3>
@@ -24,7 +23,22 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">分类</label>
-                    <input type="text" name="category" placeholder="餐饮, 交通, 工资..." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                    <select name="category_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                        <option value="">请选择分类...</option>
+                        {{range .Categories}}
+                            {{if eq .Type "expense"}}
+                                <option value="{{.ID}}" style="color: {{.Color}}">{{.Icon}} {{.Name}}</option>
+                            {{end}}
+                        {{end}}
+                        {{range .Categories}}
+                            {{if eq .Type "income"}}
+                                <option value="{{.ID}}" style="color: {{.Color}}">{{.Icon}} {{.Name}}</option>
+                            {{end}}
+                        {{end}}
+                        <option value="custom" style="color: #6B7280; font-style: italic;">✏️ 自定义分类</option>
+                    </select>
+                    <input type="text" name="custom_category" placeholder="或输入自定义分类..." class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                    <p class="text-xs text-gray-500 mt-1">输入自定义分类会自动保存</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">备注</label>
@@ -34,29 +48,15 @@
             </form>
         </div>
 
-        <!-- Goals Section -->
         <div class="bg-white p-6 rounded-xl shadow-sm">
             <h3 class="text-lg font-bold text-gray-800 mb-4">目标进度</h3>
-            {{range .Goals}}
-            <div class="mb-4">
-                <div class="flex justify-between text-sm mb-1">
-                    <span class="text-gray-600">{{.Type}} Goal</span>
-                    <span class="font-medium">¥{{printf "%.0f" .CurrentAmount}} / ¥{{printf "%.0f" .TargetAmount}}</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{printf "%.0f" (call $.CalcPercentage .CurrentAmount .TargetAmount)}}%"></div>
-                </div>
-            </div>
-            {{else}}
-            <p class="text-gray-500 text-sm">暂无目标，请在设置中添加。</p>
-            {{end}}
+            <p class="text-gray-500 text-sm">暂无目标，可在设置中添加收支目标。</p>
         </div>
     </div>
 
-    <!-- Transaction List -->
     <div class="lg:col-span-2">
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <div class="p-6 border-b border-gray-100">
                 <h3 class="text-lg font-bold text-gray-800">近期明细</h3>
             </div>
             <div class="overflow-x-auto">
@@ -72,7 +72,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         {{range .Transactions}}
-                        <tr class="hover:bg-gray-50 group">
+                        <tr class="hover:bg-gray-50">
                             <td class="p-4 text-gray-600">{{.Date.Format "2006-01-02"}}</td>
                             <td class="p-4">
                                 <span class="px-2 py-1 text-xs rounded-full {{if eq .Type "income"}}bg-green-100 text-green-700{{else}}bg-red-100 text-red-700{{end}}">
@@ -86,11 +86,15 @@
                             <td class="p-4 text-right">
                                 <form action="/finance/delete" method="POST" onsubmit="return confirm('确定要删除这条记录吗？');">
                                     <input type="hidden" name="id" value="{{.ID}}">
-                                    <button type="submit" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button type="submit" class="text-gray-400 hover:text-red-500">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
                             </td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-gray-500">暂无记录</td>
                         </tr>
                         {{end}}
                     </tbody>

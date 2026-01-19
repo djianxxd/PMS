@@ -20,6 +20,9 @@ func main() {
 	http.HandleFunc("/finance/add", handlers.AddTransactionHandler)
 	http.HandleFunc("/finance/delete", handlers.DeleteTransactionHandler)
 
+	// Category management
+	http.HandleFunc("/api/categories", handlers.GetCategoriesHandler)
+
 	http.HandleFunc("/habits", handlers.HabitsHandler)
 	http.HandleFunc("/habits/add", handlers.AddHabitHandler)
 	http.HandleFunc("/habits/delete", handlers.DeleteHabitHandler)
