@@ -32,6 +32,10 @@ func main() {
 
 	http.HandleFunc("/export", handlers.ExportHandler)
 
+	http.HandleFunc("/backup", handlers.BackupHandler)
+	http.HandleFunc("/restore", handlers.RestoreHandler)
+	http.HandleFunc("/backup/page", handlers.BackupPageHandler)
+
 	fmt.Println("Server started at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
