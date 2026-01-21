@@ -212,7 +212,7 @@
         let html = '';
         
         weekDays.forEach(day => {
-            html += `<div class="text-center text-xs font-semibold text-gray-600 p-2">${day}</div>`;
+            html += '<div class="text-center text-xs font-semibold text-gray-600 p-2">' + day + '</div>';
         });
 
         // 空白日期
@@ -240,10 +240,10 @@
                 dayClass += 'bg-green-100 text-green-700 ';
             }
 
-            html += `<div class="${dayClass}">
-                ${day}
-                ${hasChecked ? '<div class="text-xs">✓</div>' : ''}
-            </div>`;
+            html += '<div class="' + dayClass + '">' +
+                day +
+                (hasChecked ? '<div class="text-xs">✓</div>' : '') +
+            '</div>';
         }
 
         calendar.innerHTML = html;

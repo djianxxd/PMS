@@ -55,6 +55,10 @@
                             <span>待办事项和完成状态</span>
                         </li>
                         <li class="flex items-center">
+                            <div class="w-6 h-6 bg-gradient-to-r from-indigo-400 to-purple-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">📔</div>
+                            <span>日记内容和心情记录</span>
+                        </li>
+                        <li class="flex items-center">
                             <div class="w-6 h-6 bg-gradient-to-r from-red-400 to-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">🏆</div>
                             <span>成就徽章和解锁状态</span>
                         </li>
@@ -334,8 +338,8 @@
             
             if (result.success) {
                 let message = '数据还原成功！\n\n';
-                message += `备份时间: ${new Date(result.backup_date).toLocaleString()}\n`;
-                message += `备份版本: ${result.version}\n\n`;
+                message += '备份时间: ' + new Date(result.backup_date).toLocaleString() + '\n';
+                message += '备份版本: ' + result.version + '\n\n';
                 message += '还原的数据量:\n';
                 for (const [key, count] of Object.entries(result.restored)) {
                     const labels = {
@@ -343,10 +347,11 @@
                         'habits': '习惯',
                         'habit_logs': '打卡记录',
                         'todos': '待办事项',
+                        'diaries': '日记',
                         'badges': '成就徽章',
                         'finance_goals': '财务目标'
                     };
-                    message += `• ${labels[key] || key}: ${count} 条\n`;
+                    message += '• ' + (labels[key] || key) + ': ' + count + ' 条\n';
                 }
                 
                 showMessage(message, 'success');
@@ -358,7 +363,7 @@
             } else {
                 let errorMsg = '还原失败:\n';
                 result.errors.forEach(error => {
-                    errorMsg += `• ${error}\n`;
+                    errorMsg += '• ' + error + '\n';
                 });
                 showMessage(errorMsg, 'error');
             }
@@ -400,7 +405,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const elements = document.querySelectorAll('.animate-slide-up, .animate-fade-in');
         elements.forEach((el, index) => {
-            el.style.animationDelay = `${0.1 * index}s`;
+            el.style.animationDelay = (0.1 * index) + 's';
         });
     });
 </script>

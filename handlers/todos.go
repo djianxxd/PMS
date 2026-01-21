@@ -76,7 +76,7 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 验证内容不为空
 	if strings.TrimSpace(content) == "" {
-		log.Printf("❌ 待办事项内容为空")
+
 		http.Error(w, "任务内容不能为空", http.StatusBadRequest)
 		return
 	}
@@ -97,7 +97,7 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 			if parsed, err := time.Parse(format, dueDateStr); err == nil {
 				dueDate = parsed
 				dueDateToInsert = parsed
-				log.Printf("✅ 日期解析成功: %s (格式: %s)", dueDate.Format("2006-01-02 15:04:05"), format)
+
 				break
 			}
 		}
@@ -114,7 +114,7 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 		now := time.Now()
 		if dueDate.Before(now) {
 			// 严格验证：截止时间不能早于当前时间
-			log.Printf("❌ 截止时间不能早于当前时间: 截止时间=%s, 当前时间=%s", dueDate.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05"))
+
 			http.Error(w, "截止时间必须是未来时间", http.StatusBadRequest)
 			return
 		} else {
@@ -125,7 +125,7 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "截止时间设置过近，请选择一个合理的未来时间", http.StatusBadRequest)
 				return
 			} else {
-				log.Printf("✅ 日期验证通过: 截止时间=%s", dueDate.Format("2006-01-02 15:04:05"))
+
 			}
 		}
 	} else {
@@ -135,7 +135,7 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 	// 插入到数据库
 	_, err := db.DB.Exec("INSERT INTO todos (content, due_date) VALUES (?, ?)", content, dueDateToInsert)
 	if err != nil {
-		log.Printf("❌ 插入待办事项失败: %v", err)
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -189,7 +189,7 @@ func CheckinTodoHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error inserting checkin: %v", err)
 	} else {
-		log.Printf("✅ Successfully checked in todo %d at %s", id, now.Format("2006-01-02 15:04:05"))
+
 	}
 
 	http.Redirect(w, r, "/todos", http.StatusSeeOther)

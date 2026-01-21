@@ -20,6 +20,7 @@ type BackupData struct {
 	Habits       []models.Habit       `json:"habits"`
 	HabitLogs    []models.HabitLog    `json:"habit_logs"`
 	Todos        []models.Todo        `json:"todos"`
+	Diaries      []models.Diary       `json:"diaries"`
 	Badges       []models.Badge       `json:"badges"`
 	FinanceGoals []models.FinanceGoal `json:"finance_goals"`
 }
@@ -32,7 +33,7 @@ func BackupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := BackupData{
-		Version:    "1.0",
+		Version:    "1.1",
 		BackupDate: time.Now(),
 	}
 
@@ -88,6 +89,19 @@ func BackupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Export Diaries
+	dRows, err := db.DB.Query("SELECT id, title, content, weather, mood, date, created_at, updated_at FROM diaries")
+	if err == nil && dRows != nil {
+		defer dRows.Close()
+		for dRows.Next() {
+			var d models.Diary
+			err := dRows.Scan(&d.ID, &d.Title, &d.Content, &d.Weather, &d.Mood, &d.Date, &d.CreatedAt, &d.UpdatedAt)
+			if err == nil {
+				data.Diaries = append(data.Diaries, d)
+			}
+		}
+	}
+
 	// Export Badges
 	bRows, err := db.DB.Query("SELECT id, name, description, icon, unlocked, condition_days FROM badges")
 	if err == nil && bRows != nil {
@@ -121,11 +135,21 @@ func BackupHandler(w http.ResponseWriter, r *http.Request) {
 	timestamp := time.Now().Format("20060102_150405")
 	filename := fmt.Sprintf("life_backup_%s.json", timestamp)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s; filename*=UTF-8''%s", filename, filename))
 
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		http.Error(w, "Error creating backup", http.StatusInternalServerError)
+	// 防止连接被中断，设置缓冲
+	flusher, ok := w.(http.Flusher)
+	if ok {
+		flusher.Flush()
+	}
+
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(false) // 防止HTML转义
+
+	// 添加错误处理和连接检查
+	if err := encoder.Encode(data); err != nil {
+		http.Error(w, "Error creating backup: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -195,6 +219,11 @@ func RestoreHandler(w http.ResponseWriter, r *http.Request) {
 		restoreErrors = append(restoreErrors, fmt.Sprintf("Todos: %v", err))
 	}
 
+	// Restore Diaries
+	if err := restoreDiaries(backupData.Diaries); err != nil {
+		restoreErrors = append(restoreErrors, fmt.Sprintf("Diaries: %v", err))
+	}
+
 	// Restore Badges
 	if err := restoreBadges(backupData.Badges); err != nil {
 		restoreErrors = append(restoreErrors, fmt.Sprintf("Badges: %v", err))
@@ -206,13 +235,15 @@ func RestoreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return response
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if len(restoreErrors) > 0 {
 		response := map[string]interface{}{
 			"success": false,
 			"errors":  restoreErrors,
 		}
-		json.NewEncoder(w).Encode(response)
+		encoder := json.NewEncoder(w)
+		encoder.SetEscapeHTML(false)
+		encoder.Encode(response)
 	} else {
 		response := map[string]interface{}{
 			"success":     true,
@@ -224,11 +255,14 @@ func RestoreHandler(w http.ResponseWriter, r *http.Request) {
 				"habits":        len(backupData.Habits),
 				"habit_logs":    len(backupData.HabitLogs),
 				"todos":         len(backupData.Todos),
+				"diaries":       len(backupData.Diaries),
 				"badges":        len(backupData.Badges),
 				"finance_goals": len(backupData.FinanceGoals),
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		encoder := json.NewEncoder(w)
+		encoder.SetEscapeHTML(false)
+		encoder.Encode(response)
 	}
 }
 
@@ -272,7 +306,7 @@ func copyFile(src, dst string) error {
 // clearAllData removes all existing data from tables
 func clearAllData() {
 	tables := []string{
-		"habit_logs", "transactions", "todos", "finance_goals", "habits", "badges",
+		"habit_logs", "transactions", "todos", "diaries", "finance_goals", "habits", "badges",
 	}
 
 	for _, table := range tables {
@@ -403,6 +437,27 @@ func restoreFinanceGoals(financeGoals []models.FinanceGoal) error {
 
 	for _, fg := range financeGoals {
 		_, err := stmt.Exec(fg.ID, fg.Type, fg.TargetAmount, fg.StartDate, fg.EndDate)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// restoreDiaries restores diary data
+func restoreDiaries(diaries []models.Diary) error {
+	if len(diaries) == 0 {
+		return nil
+	}
+
+	stmt, err := db.DB.Prepare("INSERT INTO diaries (id, title, content, weather, mood, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, d := range diaries {
+		_, err := stmt.Exec(d.ID, d.Title, d.Content, d.Weather, d.Mood, d.Date, d.CreatedAt, d.UpdatedAt)
 		if err != nil {
 			return err
 		}
