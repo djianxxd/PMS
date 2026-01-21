@@ -76,6 +76,12 @@ func main() {
 	http.HandleFunc("/todos/checkins", handlers.TodoCheckinsHandler)
 	http.HandleFunc("/todos/delete", handlers.DeleteTodoHandler)
 
+	http.HandleFunc("/diary", handlers.DiaryHandler)
+	http.HandleFunc("/diary/add", handlers.AddDiaryHandler)
+	http.HandleFunc("/diary/delete", handlers.DeleteDiaryHandler)
+	http.HandleFunc("/diary/get", handlers.GetDiaryHandler)
+	http.HandleFunc("/diary/update", handlers.UpdateDiaryHandler)
+
 	http.HandleFunc("/export", handlers.ExportHandler)
 
 	http.HandleFunc("/backup", handlers.BackupHandler)
