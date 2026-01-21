@@ -80,3 +80,15 @@ type Badge struct {
 	Icon        string `json:"icon"` // FontAwesome class or emoji
 	Unlocked    bool   `json:"unlocked"`
 }
+
+// Diary represents a daily diary entry
+type Diary struct {
+	ID        int       `json:"id"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	Weather   string    `json:"weather"` // "sunny", "cloudy", "rainy", "snowy", "windy"
+	Mood      string    `json:"mood"`    // emoji representing mood
+	Date      time.Time `json:"date"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

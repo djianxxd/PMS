@@ -104,6 +104,16 @@ func createTables() {
 			unlocked INTEGER DEFAULT 0,
 			condition_days INTEGER
 		);`,
+		`CREATE TABLE IF NOT EXISTS diaries (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			title TEXT,
+			content TEXT,
+			weather TEXT,
+			mood TEXT,
+			date DATETIME,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		);`,
 	}
 
 	for _, query := range queries {
