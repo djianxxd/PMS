@@ -26,6 +26,11 @@ func InitDB() {
 		log.Fatal(err)
 	}
 
+	// 设置数据库编码为UTF-8
+	DB.Exec("PRAGMA encoding = 'UTF-8'")
+	DB.Exec("PRAGMA foreign_keys = ON")
+	DB.Exec("PRAGMA journal_mode = WAL")
+
 	createTables()
 	migrateDatabase()
 	seedBadges()

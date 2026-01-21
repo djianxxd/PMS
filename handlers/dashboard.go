@@ -76,60 +76,52 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	// Calculate Monthly Income/Expense (从实际数据计算，但由于数据库为空，结果会是0)
 	now := time.Now()
 
-	log.Printf("📊 开始查询统计信息")
-
 	// 首先检查数据库中是否有任何交易记录
 	var totalCount int
 	db.DB.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&totalCount)
-	log.Printf("数据库总交易记录数: %d", totalCount)
 
 	if totalCount == 0 {
-		log.Printf("❌ 数据库中没有交易记录，保持显示0")
+
 		data.MonthlyIncome = 0
 		data.MonthlyExpense = 0
 	} else {
-		log.Printf("✅ 数据库中有交易记录，开始查询统计")
 
 		// 暂时不限制日期，查询所有记录来确保能获取到数据
 		err := db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income'").Scan(&data.MonthlyIncome)
 		if err != nil {
-			log.Printf("❌ 查询总收入失败: %v", err)
+
 			data.MonthlyIncome = 0
 		} else {
-			log.Printf("✅ 总收入查询成功: ¥%.2f", data.MonthlyIncome)
+
 		}
 
 		err = db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense'").Scan(&data.MonthlyExpense)
 		if err != nil {
-			log.Printf("❌ 查询总支出失败: %v", err)
+
 			data.MonthlyExpense = 0
 		} else {
-			log.Printf("✅ 总支出查询成功: ¥%.2f", data.MonthlyExpense)
+
 		}
 
 		// 如果找到了数据，现在尝试按月份查询
 		if data.MonthlyIncome > 0 || data.MonthlyExpense > 0 {
-			log.Printf("✅ 确认有数据，现在按本月查询")
+
 			startOfMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local)
 
 			var monthlyIncome, monthlyExpense float64
 			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income' AND date >= ?", startOfMonth).Scan(&monthlyIncome)
 			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense' AND date >= ?", startOfMonth).Scan(&monthlyExpense)
 
-			log.Printf("📅 本月统计 - 收入:¥%.2f, 支出:¥%.2f", monthlyIncome, monthlyExpense)
-
 			// 如果本月有数据就用本月的，否则用总数据
 			if monthlyIncome > 0 || monthlyExpense > 0 {
 				data.MonthlyIncome = monthlyIncome
 				data.MonthlyExpense = monthlyExpense
-				log.Printf("✅ 使用本月数据")
+
 			} else {
-				log.Printf("⚠️ 本月无数据，使用全部数据")
+
 			}
 		}
 	}
-
-	log.Printf("📈 最终仪表板显示: 本月收入=¥%.2f, 本月支出=¥%.2f", data.MonthlyIncome, data.MonthlyExpense)
 
 	// Max Streak (从实际数据计算，但由于数据库为空，结果会是0)
 	var maxStreak sql.NullInt64

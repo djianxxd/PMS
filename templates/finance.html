@@ -255,7 +255,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const rows = document.querySelectorAll('tbody tr');
         rows.forEach((row, index) => {
-            row.style.animationDelay = `${0.1 * index}s`;
+            row.style.animationDelay = (0.1 * index) + 's';
             row.classList.add('animate-slide-up');
         });
     });

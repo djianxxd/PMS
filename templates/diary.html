@@ -210,7 +210,7 @@
         <div class="p-6 border-b border-slate-100">
             <h3 class="text-xl font-bold text-slate-800" id="viewModalTitle">日记详情</h3>
         </div>
-        <div id="diaryContent" class="p-6">
+        <div id="viewDiaryContent" class="p-6">
             <!-- Content will be loaded here -->
         </div>
         <div class="p-6 border-t border-slate-100 flex justify-end">
@@ -230,7 +230,8 @@ function openAddDiaryModal() {
     document.getElementById('diaryForm').reset();
     document.getElementById('diaryId').value = '';
     document.getElementById('diaryDate').value = new Date().toISOString().split('T')[0];
-    selectedMood = '';
+    selectedMood = '😊'; // 设置默认心情
+    document.getElementById('diaryMood').value = '😊';
     updateMoodButtons();
     document.getElementById('diaryModal').classList.remove('hidden');
 }
@@ -255,14 +256,28 @@ function updateMoodButtons() {
 }
 
 function viewDiary(id) {
-    fetch(`/diary/get?id=${id}`)
-        .then(response => response.text())
+    console.log('查看日记，ID:', id);
+    fetch('/diary/get?id=' + id)
+        .then(response => {
+            console.log('响应状态:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
         .then(html => {
-            document.getElementById('diaryContent').innerHTML = html;
-            document.getElementById('viewDiaryModal').classList.remove('hidden');
+            console.log('收到的HTML长度:', html.length);
+            const contentDiv = document.getElementById('viewDiaryContent');
+            if (contentDiv) {
+                contentDiv.innerHTML = html;
+                document.getElementById('viewDiaryModal').classList.remove('hidden');
+            } else {
+                console.error('找不到viewDiaryContent元素');
+            }
         })
         .catch(error => {
             console.error('Error:', error);
+            alert('加载日记详情失败：' + error.message);
         });
 }
 
@@ -271,16 +286,29 @@ function closeViewDiaryModal() {
 }
 
 function editDiary(id) {
-    fetch(`/diary/get?id=${id}&format=json`)
-        .then(response => response.json())
+    fetch('/diary/get?id=' + id + '&format=json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             document.getElementById('modalTitle').textContent = '编辑日记';
             document.getElementById('diaryId').value = data.id;
             document.getElementById('diaryTitle').value = data.title;
             document.getElementById('diaryContent').value = data.content;
-            document.getElementById('diaryWeather').value = data.weather;
-            document.getElementById('diaryDate').value = data.date.split('T')[0];
-            selectMood(data.mood);
+            document.getElementById('diaryWeather').value = data.weather || '';
+            
+            // 处理日期格式
+            let dateValue = data.date;
+            if (dateValue && dateValue.includes('T')) {
+                dateValue = dateValue.split('T')[0];
+            }
+            document.getElementById('diaryDate').value = dateValue;
+            
+            // 设置心情
+            selectMood(data.mood || '😊');
             document.getElementById('diaryModal').classList.remove('hidden');
         })
         .catch(error => {
@@ -310,24 +338,43 @@ function deleteDiary(id) {
 document.getElementById('diaryForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
+    // 确保心情被选中
+    if (!selectedMood) {
+        selectedMood = '😊'; // 设置默认心情
+    }
+    
     const formData = new FormData(this);
     const id = formData.get('id');
     const action = id ? '/diary/update' : '/diary/add';
     
-    fetch(action, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-        } else {
-            window.location.reload();
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+    // 确保心情字段被正确设置
+    formData.set('mood', selectedMood);
+    
+    // 调试信息
+    console.log('提交数据:', {
+        title: formData.get('title'),
+        content: formData.get('content'),
+        mood: formData.get('mood'),
+        weather: formData.get('weather'),
+        date: formData.get('date')
     });
+    
+    // 使用传统的表单提交方式以确保兼容性
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = action;
+    
+    // 将所有表单数据添加到新表单中
+    for (let [key, value] of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
 });
 
 // Close modals when clicking outside
