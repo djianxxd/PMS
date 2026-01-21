@@ -30,7 +30,7 @@
         {{if .Checkins}}
         <div class="space-y-3">
             {{range $index, $checkin := .Checkins}}
-            <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-purple-300 transition-all hover:shadow-sm">
+            <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-all hover:shadow-sm">
                 <div class="flex items-center space-x-4">
                     <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center">
                         <i class="fas fa-calendar-check text-white text-sm"></i>
@@ -77,13 +77,13 @@
 
 <style>
     :root {
-        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
         --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     }
 
     body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
         min-height: 100vh;
     }
 

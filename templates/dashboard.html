@@ -2,7 +2,7 @@
 <!-- 欢迎横幅 -->
 <div class="mb-8 animate-fade-in">
     <div class="glass-panel rounded-2xl p-8 text-center relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-20 blur-xl floating-label"></div>
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full opacity-20 blur-xl floating-label"></div>
         <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full opacity-20 blur-xl floating-label" style="animation-delay: 1s;"></div>
         <h1 class="text-4xl font-bold gradient-text mb-2">欢迎回来！</h1>
         <p class="text-gray-600 text-lg">今天又是充满活力的一天，让我们一起记录生活的美好</p>
@@ -10,7 +10,7 @@
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gradient-to-r from-green-400 to-blue-500 text-white">
                 <i class="fas fa-fire mr-1"></i> 连续打卡 <span class="font-bold">{{.MaxStreak}}</span> 天
             </span>
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gradient-to-r from-purple-400 to-pink-500 text-white">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gradient-to-r from-blue-400 to-blue-600 text-white">
                 <i class="fas fa-check-circle mr-1"></i> 完成率 <span class="font-bold">{{.TodoCompletionRate}}</span>%
             </span>
         </div>
@@ -53,12 +53,12 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-sm text-gray-600 mb-1">打卡连续</p>
-                <p class="text-3xl font-bold text-purple-500">{{.MaxStreak}} <span class="text-lg">天</span></p>
+                <p class="text-3xl font-bold text-blue-500">{{.MaxStreak}} <span class="text-lg">天</span></p>
                 <p class="text-xs text-gray-500 mt-1">
                     <i class="fas fa-fire mr-1 text-orange-500"></i>保持良好
                 </p>
             </div>
-            <div class="p-4 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-500 text-white shadow-lg">
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-lg">
                 <i class="fas fa-fire text-2xl"></i>
             </div>
         </div>
@@ -136,13 +136,13 @@
     <div class="glass-panel rounded-2xl p-6 hover:shadow-glow transition-all duration-300 cursor-pointer group">
         <div class="flex items-center justify-between mb-4">
             <h4 class="font-semibold text-gray-700">习惯打卡</h4>
-            <div class="p-2 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 text-white group-hover:scale-110 transition-transform">
+            <div class="p-2 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 text-white group-hover:scale-110 transition-transform">
                 <i class="fas fa-check"></i>
             </div>
         </div>
         <p class="text-sm text-gray-600">坚持今日习惯目标</p>
         <div class="mt-4 flex space-x-2">
-            <button onclick="window.location.href='/habits'" class="px-3 py-1 text-xs bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors">打卡</button>
+            <button onclick="window.location.href='/habits'" class="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">打卡</button>
             <button onclick="window.location.href='/habits'" class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">查看</button>
         </div>
     </div>
@@ -166,9 +166,9 @@
 <div class="mt-8 text-center animate-fade-in" style="animation-delay: 0.8s;">
     <div class="glass-panel rounded-2xl p-6 inline-block">
         <p class="text-lg text-gray-700 font-medium italic">
-            <i class="fas fa-quote-left text-purple-400 mr-2"></i>
+            <i class="fas fa-quote-left text-blue-400 mr-2"></i>
             <span id="motivationalQuote">坚持不是努力，而是习惯。</span>
-            <i class="fas fa-quote-right text-purple-400 ml-2"></i>
+            <i class="fas fa-quote-right text-blue-400 ml-2"></i>
         </p>
         <p class="text-sm text-gray-500 mt-2">- 每日一句</p>
     </div>
