@@ -230,7 +230,7 @@ func seedCategories() {
 
 func seedSampleData() {
 	// 不添加示例数据，保持数据库为空
-	log.Println("Database initialized without sample data - ready for user input")
+	log.Println("数据库已初始化，无示例数据 - 等待用户输入")
 }
 
 func migrateDatabase() {
@@ -260,7 +260,7 @@ func verifyCategories() {
 		return
 	}
 
-	log.Printf("Database initialized with %d categories", count)
+	log.Printf("数据库已初始化，包含 %d 个分类", count)
 
 	// 如果没有分类，强制重新初始化
 	if count == 0 {

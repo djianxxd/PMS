@@ -88,6 +88,6 @@ func main() {
 	http.HandleFunc("/restore", handlers.RestoreHandler)
 	http.HandleFunc("/backup/page", handlers.BackupPageHandler)
 
-	fmt.Println("Server started at http://localhost:8080")
+	fmt.Println("服务器已启动，访问地址：http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
