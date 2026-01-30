@@ -80,8 +80,10 @@ func InitDB() error {
 
 	err = createTables()
 	if err != nil {
-		log.Printf("Error creating tables: %v", err)
-		return fmt.Errorf("创建数据库表失败: %w\n请确保 MySQL 用户有创建表的权限", err)
+		log.Printf("Warning: Error creating tables: %v", err)
+		log.Println("Continuing with existing tables (if they exist)")
+		// 即使创建表失败，也继续执行后续操作
+		// 因为表可能已经存在，或者用户没有创建表的权限
 	}
 	migrateDatabase()
 	seedBadges()
