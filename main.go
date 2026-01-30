@@ -234,6 +234,15 @@ func setupNormalRoutes() {
 	http.HandleFunc("/diary/update", handlers.AuthMiddleware(handlers.UpdateDiaryHandler))
 
 	http.HandleFunc("/export", handlers.AuthMiddleware(handlers.ExportHandler))
+
+	// 管理后台路由
+	http.HandleFunc("/admin", handlers.AdminAuthMiddleware(handlers.AdminDashboardHandler))
+	http.HandleFunc("/admin/users", handlers.AdminAuthMiddleware(handlers.AdminUsersHandler))
+	http.HandleFunc("/admin/users/edit", handlers.AdminAuthMiddleware(handlers.AdminEditUserHandler))
+	http.HandleFunc("/admin/users/delete", handlers.AdminAuthMiddleware(handlers.AdminDeleteUserHandler))
+	http.HandleFunc("/admin/data", handlers.AdminAuthMiddleware(handlers.AdminDataHandler))
+	http.HandleFunc("/admin/data/export", handlers.AdminAuthMiddleware(handlers.AdminExportDataHandler))
+	http.HandleFunc("/admin/data/import", handlers.AdminAuthMiddleware(handlers.AdminImportDataHandler))
 }
 
 // openBrowser 打开浏览器

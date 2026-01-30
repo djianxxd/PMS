@@ -27,6 +27,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 			MySQLPassword string
 			MySQLDatabase string
 			ServerPort    string
+			AdminUsername string
+			AdminPassword string
 			Error         string
 			Success       string
 		}{
@@ -36,6 +38,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 			MySQLPassword: config.AppConfig.MySQL.Password,
 			MySQLDatabase: config.AppConfig.MySQL.Database,
 			ServerPort:    config.AppConfig.Server.Port,
+			AdminUsername: config.AppConfig.Admin.Username,
+			AdminPassword: config.AppConfig.Admin.Password,
 		}
 		
 		// 直接解析和执行 config.html 模板
@@ -68,6 +72,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 		mysqlPassword := r.FormValue("mysql_password")
 		mysqlDatabase := r.FormValue("mysql_database")
 		serverPort := r.FormValue("server_port")
+		adminUsername := r.FormValue("admin_username")
+		adminPassword := r.FormValue("admin_password")
 
 		// 更新配置
 		config.AppConfig.MySQL.Host = mysqlHost
@@ -76,6 +82,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 		config.AppConfig.MySQL.Password = mysqlPassword
 		config.AppConfig.MySQL.Database = mysqlDatabase
 		config.AppConfig.Server.Port = serverPort
+		config.AppConfig.Admin.Username = adminUsername
+		config.AppConfig.Admin.Password = adminPassword
 
 		// 测试数据库连接
 		success, created, err := testDatabaseConnectionInternal(mysqlHost, mysqlPort, mysqlUser, mysqlPassword, mysqlDatabase)
@@ -88,6 +96,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 				MySQLPassword string
 				MySQLDatabase string
 				ServerPort    string
+				AdminUsername string
+				AdminPassword string
 				Error         string
 				Success       string
 			}{
@@ -97,6 +107,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 				MySQLPassword: mysqlPassword,
 				MySQLDatabase: mysqlDatabase,
 				ServerPort:    serverPort,
+				AdminUsername: adminUsername,
+				AdminPassword: adminPassword,
 				Error:         fmt.Sprintf("数据库连接失败: %v", err),
 			}
 			
@@ -132,6 +144,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 				MySQLPassword string
 				MySQLDatabase string
 				ServerPort    string
+				AdminUsername string
+				AdminPassword string
 				Error         string
 				Success       string
 			}{
@@ -141,6 +155,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 				MySQLPassword: mysqlPassword,
 				MySQLDatabase: mysqlDatabase,
 				ServerPort:    serverPort,
+				AdminUsername: adminUsername,
+				AdminPassword: adminPassword,
 				Error:         fmt.Sprintf("保存配置失败: %v", err),
 			}
 			
@@ -179,6 +195,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 				MySQLPassword string
 				MySQLDatabase string
 				ServerPort    string
+				AdminUsername string
+				AdminPassword string
 				Error         string
 				Success       string
 			}{
@@ -188,6 +206,8 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 				MySQLPassword: mysqlPassword,
 				MySQLDatabase: mysqlDatabase,
 				ServerPort:    serverPort,
+				AdminUsername: adminUsername,
+				AdminPassword: adminPassword,
 				Error:         fmt.Sprintf("数据库初始化失败: %v", err),
 			}
 			

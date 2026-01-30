@@ -243,11 +243,6 @@
             <div class="form-row full-width">
                 <label for="mysql_database">数据库名（MySQL数据库实例名称）</label>
                 <input type="text" id="mysql_database" name="mysql_database" value="{{.MySQLDatabase}}" required>
-                <div class="note">
-                    <p>• 数据库表名会由应用程序自动创建，无需手动配置</p>
-                    <p>• 如果使用普通用户，请确保该用户对指定数据库有读写权限</p>
-                    <p>• 如果用户无创建数据库权限，请先手动创建数据库</p>
-                </div>
             </div>
         </div>
         
@@ -261,6 +256,25 @@
                 <div class="form-row">
                     <label for="server_port">网站端口</label>
                     <input type="text" id="server_port" name="server_port" value="{{.ServerPort}}" required>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">
+                <i class="fas fa-user-shield"></i>
+                <span>管理员配置</span>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-row">
+                    <label for="admin_username">管理员账号</label>
+                    <input type="text" id="admin_username" name="admin_username" value="{{.AdminUsername}}" required>
+                </div>
+                
+                <div class="form-row">
+                    <label for="admin_password">管理员密码</label>
+                    <input type="password" id="admin_password" name="admin_password" value="{{.AdminPassword}}" required>
                 </div>
             </div>
         </div>
