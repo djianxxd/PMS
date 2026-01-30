@@ -81,6 +81,15 @@ type Badge struct {
 	Unlocked    bool   `json:"unlocked"`
 }
 
+// User represents a registered user
+type User struct {
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	Password  string    `json:"-"` // Don't include password in JSON
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // Diary represents a daily diary entry
 type Diary struct {
 	ID        int       `json:"id"`

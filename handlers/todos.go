@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"goblog/auth"
 	"goblog/db"
 	"goblog/models"
 	"log"
@@ -13,6 +14,16 @@ import (
 
 // TodosHandler renders todos page
 func TodosHandler(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get user session
+	session, _ := auth.ValidateSession(r)
+
 	data := struct {
 		ActivePage    string
 		Todos         []models.Todo
@@ -20,11 +31,15 @@ func TodosHandler(w http.ResponseWriter, r *http.Request) {
 		PendingCount  int
 		DoneCount     int
 		TotalCheckins int
+		User          *auth.Session
+		IsLoggedIn    bool
 	}{
 		ActivePage: "todos",
+		User:       session,
+		IsLoggedIn: session != nil,
 	}
 
-	rows, err := db.DB.Query("SELECT id, content, status, due_date FROM todos ORDER BY status DESC, due_date ASC")
+	rows, err := db.DB.Query("SELECT id, content, status, due_date FROM todos WHERE user_id = ? ORDER BY status DESC, due_date ASC", userID)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -40,7 +55,7 @@ func TodosHandler(w http.ResponseWriter, r *http.Request) {
 			// 获取总打卡次数和最近打卡时间
 			var totalCount int
 			var lastCheckin sql.NullTime
-			err := db.DB.QueryRow("SELECT COUNT(*), MAX(checkin_date) FROM todo_checkins WHERE todo_id = ?", t.ID).Scan(&totalCount, &lastCheckin)
+			err := db.DB.QueryRow("SELECT COUNT(*), MAX(checkin_date) FROM todo_checkins tc INNER JOIN todos t ON tc.todo_id = t.id WHERE tc.todo_id = ? AND t.user_id = ?", t.ID, userID).Scan(&totalCount, &lastCheckin)
 			if err == nil {
 				t.CheckinCount = totalCount
 				if lastCheckin.Valid {
@@ -66,6 +81,13 @@ func TodosHandler(w http.ResponseWriter, r *http.Request) {
 func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -133,7 +155,7 @@ func AddTodoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 插入到数据库
-	_, err := db.DB.Exec("INSERT INTO todos (content, due_date) VALUES (?, ?)", content, dueDateToInsert)
+	_, err := db.DB.Exec("INSERT INTO todos (user_id, content, due_date) VALUES (?, ?, ?)", userID, content, dueDateToInsert)
 	if err != nil {
 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -151,11 +173,18 @@ func ToggleTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	id, _ := strconv.Atoi(r.FormValue("id"))
 
 	// Get current status
 	var status string
-	err := db.DB.QueryRow("SELECT status FROM todos WHERE id = ?", id).Scan(&status)
+	err := db.DB.QueryRow("SELECT status FROM todos WHERE id = ? AND user_id = ?", id, userID).Scan(&status)
 	if err != nil {
 		http.Redirect(w, r, "/todos", http.StatusSeeOther)
 		return
@@ -166,7 +195,7 @@ func ToggleTodoHandler(w http.ResponseWriter, r *http.Request) {
 		newStatus = "pending"
 	}
 
-	_, err = db.DB.Exec("UPDATE todos SET status = ? WHERE id = ?", newStatus, id)
+	_, err = db.DB.Exec("UPDATE todos SET status = ? WHERE id = ? AND user_id = ?", newStatus, id, userID)
 	if err != nil {
 		log.Println("Error toggling todo:", err)
 	}
@@ -181,11 +210,26 @@ func CheckinTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	id, _ := strconv.Atoi(r.FormValue("id"))
 	now := time.Now()
 
+	// Verify todo belongs to user
+	var count int
+	err := db.DB.QueryRow("SELECT COUNT(*) FROM todos WHERE id = ? AND user_id = ?", id, userID).Scan(&count)
+	if err != nil || count == 0 {
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
 	// 直接记录打卡，不做每天限制
-	_, err := db.DB.Exec("INSERT INTO todo_checkins (todo_id, checkin_date) VALUES (?, ?)", id, now)
+	_, err = db.DB.Exec("INSERT INTO todo_checkins (todo_id, checkin_date) VALUES (?, ?)", id, now)
 	if err != nil {
 		log.Printf("Error inserting checkin: %v", err)
 	} else {
@@ -202,16 +246,23 @@ func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	id, _ := strconv.Atoi(r.FormValue("id"))
 
-	// 先删除相关的打卡记录
-	_, err := db.DB.Exec("DELETE FROM todo_checkins WHERE todo_id = ?", id)
+	// 先删除相关的打卡记录（通过todo_id关联，确保是用户自己的）
+	_, err := db.DB.Exec("DELETE tc FROM todo_checkins tc INNER JOIN todos t ON tc.todo_id = t.id WHERE tc.todo_id = ? AND t.user_id = ?", id, userID)
 	if err != nil {
 		log.Printf("Error deleting todo checkins: %v", err)
 	}
 
 	// 删除todo
-	_, err = db.DB.Exec("DELETE FROM todos WHERE id = ?", id)
+	_, err = db.DB.Exec("DELETE FROM todos WHERE id = ? AND user_id = ?", id, userID)
 	if err != nil {
 		log.Printf("Error deleting todo: %v", err)
 	}
@@ -221,6 +272,13 @@ func DeleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 
 // TodoCheckinsHandler shows detailed checkin history for a todo
 func TodoCheckinsHandler(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Redirect(w, r, "/todos", http.StatusSeeOther)
@@ -229,6 +287,14 @@ func TodoCheckinsHandler(w http.ResponseWriter, r *http.Request) {
 
 	todoID, err := strconv.Atoi(id)
 	if err != nil {
+		http.Redirect(w, r, "/todos", http.StatusSeeOther)
+		return
+	}
+
+	// Verify todo belongs to user
+	var count int
+	err = db.DB.QueryRow("SELECT COUNT(*) FROM todos WHERE id = ? AND user_id = ?", todoID, userID).Scan(&count)
+	if err != nil || count == 0 {
 		http.Redirect(w, r, "/todos", http.StatusSeeOther)
 		return
 	}
@@ -245,11 +311,11 @@ func TodoCheckinsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取todo信息
-	err = db.DB.QueryRow("SELECT id, content, status, due_date FROM todos WHERE id = ?", todoID).Scan(
+	err = db.DB.QueryRow("SELECT id, content, status, due_date FROM todos WHERE id = ? AND user_id = ?", todoID, userID).Scan(
 		&data.Todo.ID, &data.Todo.Content, &data.Todo.Status, &data.Todo.DueDate)
 
 	// 获取打卡记录
-	rows, err := db.DB.Query("SELECT id, checkin_date FROM todo_checkins WHERE todo_id = ? ORDER BY checkin_date DESC LIMIT 50", todoID)
+	rows, err := db.DB.Query("SELECT id, checkin_date FROM todo_checkins tc INNER JOIN todos t ON tc.todo_id = t.id WHERE tc.todo_id = ? AND t.user_id = ? ORDER BY checkin_date DESC LIMIT 50", todoID, userID)
 	if err != nil {
 		log.Printf("Error fetching checkins: %v", err)
 	} else {
