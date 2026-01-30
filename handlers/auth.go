@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"goblog/auth"
+	"goblog/config"
 	"log"
 	"net/http"
 )
@@ -38,7 +39,17 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			returnURL = "/"
 		}
 
-		// Validate user credentials
+		// 检查是否是管理员登录
+		if username == config.AppConfig.Admin.Username && password == config.AppConfig.Admin.Password {
+			// 管理员登录
+			// 创建会话
+			auth.CreateSession(w, 0, "admin")
+			// 跳转到管理后台
+			http.Redirect(w, r, "/admin", http.StatusSeeOther)
+			return
+		}
+
+		// 普通用户登录验证
 		user, err := GetUserByUsername(username)
 		if err != nil {
 			data := map[string]interface{}{

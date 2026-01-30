@@ -1,1 +1,1 @@
-{"mysql":{"host":"localhost","port":"3306","user":"root","password":"mysql_4yFdyp","database":"goblog"},"server":{"port":"8081"},"initialized":true}
+{"mysql":{"host":"192.168.11.101","port":"3306","user":"root","password":"mysql_4yFdyp","database":"goblog"},"server":{"port":"8081"},"admin":{"username":"admin","password":"admin"},"initialized":true}

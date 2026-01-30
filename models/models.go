@@ -41,15 +41,16 @@ type FinanceGoal struct {
 
 // Habit represents a habit to track
 type Habit struct {
-	ID           int        `json:"id"`
-	Name         string     `json:"name"`
-	Description  string     `json:"description"`
-	Frequency    string     `json:"frequency"` // "daily", "weekly"
-	Streak       int        `json:"streak"`
-	TotalDays    int        `json:"total_days"`
-	TodayChecked bool       `json:"today_checked"` // Whether habit is checked today
-	CreatedAt    time.Time  `json:"created_at"`
-	Logs         []HabitLog `json:"logs"` // For easy access in template
+	ID              int        `json:"id"`
+	Name            string     `json:"name"`
+	Description     string     `json:"description"`
+	Frequency       string     `json:"frequency"` // "daily", "weekly"
+	Streak          int        `json:"streak"`
+	TotalDays       int        `json:"total_days"`
+	TodayChecked    bool       `json:"today_checked"`    // Whether habit is checked today
+	MonthlyProgress int        `json:"monthly_progress"` // 本月进度百分比
+	CreatedAt       time.Time  `json:"created_at"`
+	Logs            []HabitLog `json:"logs"` // For easy access in template
 }
 
 // HabitLog represents a completion of a habit

@@ -86,10 +86,10 @@
                 <div class="mb-6">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-sm text-gray-600">本月进度</span>
-                        <span class="text-sm font-semibold text-blue-600">70%</span>
+                        <span class="text-sm font-semibold text-blue-600">{{.MonthlyProgress}}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3">
-                        <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-500" style="width: 70%"></div>
+                        <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full transition-all duration-500" style="width: {{.MonthlyProgress}}%"></div>
                     </div>
                 </div>
 

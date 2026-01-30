@@ -62,6 +62,9 @@ func HabitsHandler(w http.ResponseWriter, r *http.Request) {
 				data.MaxStreak = h.Streak
 			}
 
+			// 计算本月进度
+			h.MonthlyProgress = calculateMonthlyProgress(h.ID)
+
 			data.Habits = append(data.Habits, h)
 			data.TotalHabits++
 		}
@@ -89,6 +92,42 @@ func HabitsHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "habits.html", data)
 }
 
+// calculateMonthlyProgress 计算习惯的本月进度
+func calculateMonthlyProgress(habitID int) int {
+	// Check if database connection is available
+	if db.DB == nil {
+		log.Println("Error calculating monthly progress: Database connection is not initialized")
+		return 0
+	}
+
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local)
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	// 计算本月的总天数
+	daysInMonth := endOfMonth.Sub(startOfMonth).Hours() / 24
+
+	// 计算本月的打卡天数
+	var checkedDays int
+	err := db.DB.QueryRow("SELECT COUNT(*) FROM habit_logs WHERE habit_id = ? AND date >= ? AND date < ?", habitID, startOfMonth, endOfMonth).Scan(&checkedDays)
+	if err != nil {
+		log.Printf("Error calculating monthly progress: %v", err)
+		return 0
+	}
+
+	// 计算进度百分比
+	if daysInMonth > 0 {
+		progress := int((float64(checkedDays) / daysInMonth) * 100)
+		// 确保进度不超过100%
+		if progress > 100 {
+			progress = 100
+		}
+		return progress
+	}
+
+	return 0
+}
+
 // AddHabitHandler adds a new habit
 func AddHabitHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -107,9 +146,28 @@ func AddHabitHandler(w http.ResponseWriter, r *http.Request) {
 	description := r.FormValue("description")
 	frequency := r.FormValue("frequency")
 
+	// Validate input
+	if name == "" {
+		log.Println("Error adding habit: Name is required")
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+
+	// Check if database connection is available
+	if db.DB == nil {
+		log.Println("Error adding habit: Database connection is not initialized")
+		http.Redirect(w, r, "/habits", http.StatusSeeOther)
+		return
+	}
+
+	log.Printf("Adding habit for user %d: name=%s, description=%s, frequency=%s", userID, name, description, frequency)
+
 	_, err := db.DB.Exec("INSERT INTO habits (user_id, name, description, frequency) VALUES (?, ?, ?, ?)", userID, name, description, frequency)
 	if err != nil {
-		log.Println("Error adding habit:", err)
+		log.Printf("Error adding habit: %v", err)
+		// 即使出错也要重定向回习惯页面，让用户知道操作已完成
+	} else {
+		log.Println("Habit added successfully")
 	}
 
 	http.Redirect(w, r, "/habits", http.StatusSeeOther)

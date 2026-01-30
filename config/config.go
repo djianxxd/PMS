@@ -19,6 +19,10 @@ type Config struct {
 	Server struct {
 		Port string `json:"port"`
 	} `json:"server"`
+	Admin struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	} `json:"admin"`
 	Initialized bool `json:"initialized"`
 }
 
@@ -82,6 +86,8 @@ func setDefaultConfig() {
 	AppConfig.MySQL.Password = ""
 	AppConfig.MySQL.Database = "goblog"
 	AppConfig.Server.Port = "8081"
+	AppConfig.Admin.Username = "admin"
+	AppConfig.Admin.Password = "admin123"
 	AppConfig.Initialized = false
 }
 
