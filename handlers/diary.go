@@ -3,9 +3,9 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"goblog/auth"
 	"goblog/db"
 	"goblog/models"
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
@@ -14,12 +14,23 @@ import (
 
 func DiaryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		// Get diaries from database
+		// Get user ID from context
+		userID, ok := GetUserIDFromContext(r)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Get user session for display
+		session, _ := auth.ValidateSession(r)
+
+		// Get diaries from database for current user
 		rows, err := db.DB.Query(`
 			SELECT id, title, content, weather, mood, date, created_at, updated_at 
 			FROM diaries 
+			WHERE user_id = ?
 			ORDER BY date DESC, created_at DESC
-		`)
+		`, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -53,12 +64,6 @@ func DiaryHandler(w http.ResponseWriter, r *http.Request) {
 			diaryGroups[monthKey] = append(diaryGroups[monthKey], diary)
 		}
 
-		tmpl, err := template.ParseFiles("templates/layout.html", "templates/diary.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		// Calculate total diaries count
 		totalCount := 0
 		for _, diaries := range diaryGroups {
@@ -72,6 +77,8 @@ func DiaryHandler(w http.ResponseWriter, r *http.Request) {
 			CurrentStreak int
 			TodayMood     string
 			ActivePage    string
+			User          *auth.Session
+			IsLoggedIn    bool
 		}{
 			DiaryGroups:   diaryGroups,
 			TotalCount:    totalCount,
@@ -79,12 +86,11 @@ func DiaryHandler(w http.ResponseWriter, r *http.Request) {
 			CurrentStreak: calculateCurrentStreak(diaries),
 			TodayMood:     getTodayMood(diaries),
 			ActivePage:    "diary",
+			User:          session,
+			IsLoggedIn:    session != nil,
 		}
 
-		err = tmpl.ExecuteTemplate(w, "layout", data)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		renderTemplate(w, "diary.html", data)
 	}
 }
 
@@ -230,10 +236,17 @@ func AddDiaryHandler(w http.ResponseWriter, r *http.Request) {
 			date = time.Now()
 		}
 
+		// Get user ID from context
+		userID, ok := GetUserIDFromContext(r)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		result, err := db.DB.Exec(`
-			INSERT INTO diaries (title, content, weather, mood, date, created_at, updated_at) 
-			VALUES (?, ?, ?, ?, ?, ?, ?)
-		`, title, content, weather, mood, date, time.Now(), time.Now())
+		INSERT INTO diaries (user_id, title, content, weather, mood, date, created_at, updated_at) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, userID, title, content, weather, mood, date, time.Now(), time.Now())
 
 		if err != nil {
 			log.Printf("数据库插入错误: %v", err)
@@ -250,13 +263,20 @@ func AddDiaryHandler(w http.ResponseWriter, r *http.Request) {
 
 func DeleteDiaryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+		// Get user ID from context
+		userID, ok := GetUserIDFromContext(r)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		id := r.FormValue("id")
 		if id == "" {
 			http.Error(w, "ID不能为空", http.StatusBadRequest)
 			return
 		}
 
-		_, err := db.DB.Exec("DELETE FROM diaries WHERE id = ?", id)
+		_, err := db.DB.Exec("DELETE FROM diaries WHERE id = ? AND user_id = ?", id, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -267,6 +287,13 @@ func DeleteDiaryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDiaryHandler(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		log.Printf("获取日记失败：ID为空")
@@ -280,8 +307,8 @@ func GetDiaryHandler(w http.ResponseWriter, r *http.Request) {
 	err := db.DB.QueryRow(`
 		SELECT id, title, content, weather, mood, date, created_at, updated_at 
 		FROM diaries 
-		WHERE id = ?
-	`, id).Scan(
+		WHERE id = ? AND user_id = ?
+	`, id, userID).Scan(
 		&diary.ID,
 		&diary.Title,
 		&diary.Content,
@@ -388,6 +415,13 @@ func GetDiaryHandler(w http.ResponseWriter, r *http.Request) {
 
 func UpdateDiaryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
+		// Get user ID from context
+		userID, ok := GetUserIDFromContext(r)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		// 确保正确解析UTF-8编码的表单数据
 		if err := r.ParseForm(); err != nil {
 			log.Printf("更新日记表单解析错误: %v", err)
@@ -435,8 +469,8 @@ func UpdateDiaryHandler(w http.ResponseWriter, r *http.Request) {
 		result, err := db.DB.Exec(`
 			UPDATE diaries 
 			SET title = ?, content = ?, weather = ?, mood = ?, date = ?, updated_at = ?
-			WHERE id = ?
-		`, title, content, weather, mood, date, time.Now(), id)
+			WHERE id = ? AND user_id = ?
+		`, title, content, weather, mood, date, time.Now(), id, userID)
 
 		if err != nil {
 			log.Printf("数据库更新错误: %v", err)

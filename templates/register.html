@@ -1,0 +1,278 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>自律人生 - {{.Title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            font-family: 'Noto Sans SC', sans-serif; 
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+{{template "content" .}}
+</body>
+</html>
+{{end}}
+
+{{define "content"}}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Logo和标题 -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl mb-4 shadow-lg">
+                <i class="fas fa-user-plus text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">注册账户</h1>
+            <p class="text-gray-600">创建您的个人管理账户</p>
+        </div>
+
+        <!-- 注册表单 -->
+        <div class="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 p-8">
+            {{if .Error}}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                    <span class="text-red-700">{{.Error}}</span>
+                </div>
+            </div>
+            {{end}}
+
+            <form method="POST" action="/register" class="space-y-6">
+                <!-- 用户名 -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2 text-purple-500"></i>用户名
+                    </label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required
+                        value="{{if .Values}}{{.Values.username}}{{end}}"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        placeholder="请输入用户名"
+                        autocomplete="username">
+                    <p class="mt-1 text-xs text-gray-500">用户名将作为您的登录标识</p>
+                </div>
+
+                <!-- 邮箱 -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope mr-2 text-purple-500"></i>邮箱地址
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        required
+                        value="{{if .Values}}{{.Values.email}}{{end}}"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                        placeholder="请输入邮箱地址"
+                        autocomplete="email">
+                    <p class="mt-1 text-xs text-gray-500">用于找回密码等重要通知</p>
+                </div>
+
+                <!-- 密码 -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2 text-purple-500"></i>密码
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required
+                            minlength="6"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm pr-12"
+                            placeholder="请输入密码（至少6位）"
+                            autocomplete="new-password">
+                        <button 
+                            type="button" 
+                            onclick="togglePassword('password')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-eye" id="password-icon"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                <div id="password-strength" class="h-2 rounded-full transition-all duration-300"></div>
+                            </div>
+                            <span id="strength-text" class="text-xs text-gray-500 w-16">弱</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 确认密码 -->
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-check-circle mr-2 text-purple-500"></i>确认密码
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="confirm_password" 
+                            name="confirm_password" 
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm pr-12"
+                            placeholder="请再次输入密码"
+                            autocomplete="new-password">
+                        <button 
+                            type="button" 
+                            onclick="togglePassword('confirm_password')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-eye" id="confirm_password-icon"></i>
+                        </button>
+                    </div>
+                    <p id="password-match" class="mt-1 text-xs hidden">密码匹配</p>
+                </div>
+
+                <!-- 服务条款 -->
+                <div class="flex items-start">
+                    <input 
+                        type="checkbox" 
+                        id="terms" 
+                        required
+                        class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mt-0.5">
+                    <label for="terms" class="ml-2 text-sm text-gray-600">
+                        我已阅读并同意 <a href="#" class="text-purple-600 hover:text-purple-500">服务条款</a> 和 <a href="#" class="text-purple-600 hover:text-purple-500">隐私政策</a>
+                    </label>
+                </div>
+
+                <!-- 注册按钮 -->
+                <button 
+                    type="submit" 
+                    class="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-xl hover:from-purple-700 hover:to-blue-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg">
+                    <i class="fas fa-user-plus mr-2"></i>注册账户
+                </button>
+            </form>
+
+            <!-- 登录链接 -->
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">
+                    已有账户？
+                    <a href="/login" class="font-medium text-purple-600 hover:text-purple-500">立即登录</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- 底部信息 -->
+        <div class="mt-8 text-center text-sm text-gray-500">
+            <p>© 2024 自律人生 - 开启高效生活</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(inputId + '-icon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// 密码强度检查
+function checkPasswordStrength(password) {
+    const strengthBar = document.getElementById('password-strength');
+    const strengthText = document.getElementById('strength-text');
+    
+    let strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.length >= 10) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z\d]/.test(password)) strength++;
+    
+    const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
+    const texts = ['弱', '较弱', '中等', '较强', '强'];
+    const widths = ['20%', '40%', '60%', '80%', '100%'];
+    
+    strengthBar.className = `h-2 rounded-full transition-all duration-300 ${colors[strength - 1] || 'bg-red-500'}`;
+    strengthBar.style.width = widths[strength - 1] || '20%';
+    strengthText.textContent = texts[strength - 1] || '弱';
+    strengthText.className = `text-xs ${colors[strength - 1] ? colors[strength - 1].replace('bg-', 'text-') : 'text-gray-500'} w-16`;
+}
+
+// 密码匹配检查
+function checkPasswordMatch() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const matchText = document.getElementById('password-match');
+    const confirmInput = document.getElementById('confirm_password');
+    
+    if (confirmPassword && password !== confirmPassword) {
+        matchText.textContent = '密码不匹配';
+        matchText.className = 'mt-1 text-xs text-red-500';
+        confirmInput.classList.add('border-red-500');
+        confirmInput.classList.remove('border-green-500');
+    } else if (confirmPassword && password === confirmPassword) {
+        matchText.textContent = '密码匹配';
+        matchText.className = 'mt-1 text-xs text-green-500';
+        confirmInput.classList.remove('border-red-500');
+        confirmInput.classList.add('border-green-500');
+    } else {
+        matchText.className = 'mt-1 text-xs hidden';
+        confirmInput.classList.remove('border-red-500', 'border-green-500');
+    }
+}
+
+// 事件监听
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    
+    passwordInput.addEventListener('input', function() {
+        checkPasswordStrength(this.value);
+        checkPasswordMatch();
+    });
+    
+    confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    
+    // 自动聚焦到用户名输入框
+    document.getElementById('username').focus();
+});
+</script>
+{{end}}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"goblog/auth"
 	"goblog/db"
 	"goblog/models"
 	"log"
@@ -11,6 +12,16 @@ import (
 
 // HabitsHandler renders the habits page
 func HabitsHandler(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get user session for display
+	session, _ := auth.ValidateSession(r)
+
 	data := struct {
 		ActivePage     string
 		Habits         []models.Habit
@@ -20,12 +31,16 @@ func HabitsHandler(w http.ResponseWriter, r *http.Request) {
 		MaxStreak      int
 		UnlockedBadges int
 		TotalBadges    int
+		User           *auth.Session
+		IsLoggedIn     bool
 	}{
 		ActivePage: "habits",
+		User:       session,
+		IsLoggedIn: session != nil,
 	}
 
-	// Fetch Habits
-	rows, err := db.DB.Query("SELECT id, name, description, frequency, streak, total_days FROM habits")
+	// Fetch Habits for current user
+	rows, err := db.DB.Query("SELECT id, name, description, frequency, streak, total_days FROM habits WHERE user_id = ?", userID)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -52,8 +67,8 @@ func HabitsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Fetch Badges
-	bRows, err := db.DB.Query("SELECT id, name, description, icon, unlocked FROM badges")
+	// Fetch Badges for current user
+	bRows, err := db.DB.Query("SELECT id, name, description, icon, unlocked FROM badges WHERE user_id = ?", userID)
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -81,11 +96,18 @@ func AddHabitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	name := r.FormValue("name")
 	description := r.FormValue("description")
 	frequency := r.FormValue("frequency")
 
-	_, err := db.DB.Exec("INSERT INTO habits (name, description, frequency) VALUES (?, ?, ?)", name, description, frequency)
+	_, err := db.DB.Exec("INSERT INTO habits (user_id, name, description, frequency) VALUES (?, ?, ?, ?)", userID, name, description, frequency)
 	if err != nil {
 		log.Println("Error adding habit:", err)
 	}
@@ -100,6 +122,13 @@ func DeleteHabitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	id, _ := strconv.Atoi(r.FormValue("id"))
 
 	// Delete logs first (foreign key)
@@ -108,7 +137,7 @@ func DeleteHabitHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error deleting habit logs:", err)
 	}
 
-	_, err = db.DB.Exec("DELETE FROM habits WHERE id = ?", id)
+	_, err = db.DB.Exec("DELETE FROM habits WHERE id = ? AND user_id = ?", id, userID)
 	if err != nil {
 		log.Println("Error deleting habit:", err)
 	}
@@ -123,13 +152,20 @@ func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	habitID, _ := strconv.Atoi(r.FormValue("habit_id"))
 	now := time.Now()
 
 	// Check if already checked in today
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 	var count int
-	err := db.DB.QueryRow("SELECT COUNT(*) FROM habit_logs WHERE habit_id = ? AND date >= ?", habitID, startOfDay).Scan(&count)
+	err := db.DB.QueryRow("SELECT COUNT(*) FROM habit_logs hl INNER JOIN habits h ON hl.habit_id = h.id WHERE hl.habit_id = ? AND hl.date >= ? AND h.user_id = ?", habitID, startOfDay, userID).Scan(&count)
 	if err != nil {
 		log.Println(err)
 		http.Redirect(w, r, "/habits", http.StatusSeeOther)
@@ -170,14 +206,14 @@ func CheckinHabitHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error updating habit:", err)
 	}
 
-	// Check Badges
-	checkBadges(totalDays, streak)
+	// Check Badges for current user
+	checkBadges(userID, totalDays, streak)
 
 	http.Redirect(w, r, "/habits", http.StatusSeeOther)
 }
 
-func checkBadges(totalDays, streak int) {
-	rows, err := db.DB.Query("SELECT id, condition_days, unlocked FROM badges WHERE unlocked = 0")
+func checkBadges(userID, totalDays, streak int) {
+	rows, err := db.DB.Query("SELECT id, condition_days, unlocked FROM badges WHERE user_id = ? AND unlocked = 0", userID)
 	if err != nil {
 		return
 	}
@@ -189,7 +225,7 @@ func checkBadges(totalDays, streak int) {
 		rows.Scan(&id, &days, &unlocked)
 
 		if totalDays >= days || streak >= days {
-			db.DB.Exec("UPDATE badges SET unlocked = 1 WHERE id = ?", id)
+			db.DB.Exec("UPDATE badges SET unlocked = 1 WHERE id = ? AND user_id = ?", id, userID)
 		}
 	}
 }

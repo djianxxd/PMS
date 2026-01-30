@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"goblog/auth"
 	"goblog/db"
 	"html/template"
 	"log"
@@ -40,6 +41,19 @@ func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 			}
 			return aVal + bVal
 		},
+		"substr": func(s string, start, length int) string {
+			if start < 0 {
+				start = 0
+			}
+			if start >= len(s) {
+				return ""
+			}
+			end := start + length
+			if end > len(s) {
+				end = len(s)
+			}
+			return s[start:end]
+		},
 	}
 
 	t := template.New("").Funcs(funcMap)
@@ -57,6 +71,16 @@ func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 
 // DashboardHandler handles the main dashboard
 func DashboardHandler(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context
+	userID, ok := GetUserIDFromContext(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get user session for display
+	session, _ := auth.ValidateSession(r)
+
 	data := struct {
 		ActivePage         string
 		MonthlyIncome      float64
@@ -69,8 +93,12 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		TotalCount         int
 		HabitDoneCount     int
 		HabitMissedCount   int
+		User               *auth.Session
+		IsLoggedIn         bool
 	}{
 		ActivePage: "dashboard",
+		User:       session,
+		IsLoggedIn: session != nil,
 	}
 
 	// Calculate Monthly Income/Expense (从实际数据计算，但由于数据库为空，结果会是0)
@@ -78,7 +106,7 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 首先检查数据库中是否有任何交易记录
 	var totalCount int
-	db.DB.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&totalCount)
+	db.DB.QueryRow("SELECT COUNT(*) FROM transactions WHERE user_id = ?", userID).Scan(&totalCount)
 
 	if totalCount == 0 {
 
@@ -86,13 +114,15 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		data.MonthlyExpense = 0
 	} else {
 
-		// 暂时不限制日期，查询所有记录来确保能获取到数据
-		err := db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income'").Scan(&data.MonthlyIncome)
+		// 查询当前用户的记录
+		err := db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income' AND user_id = ?", userID).Scan(&data.MonthlyIncome)
 		if err != nil {
-
 			data.MonthlyIncome = 0
-		} else {
+		}
 
+		err = db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense' AND user_id = ?", userID).Scan(&data.MonthlyExpense)
+		if err != nil {
+			data.MonthlyExpense = 0
 		}
 
 		err = db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense'").Scan(&data.MonthlyExpense)
@@ -109,8 +139,8 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 			startOfMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.Local)
 
 			var monthlyIncome, monthlyExpense float64
-			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income' AND date >= ?", startOfMonth).Scan(&monthlyIncome)
-			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense' AND date >= ?", startOfMonth).Scan(&monthlyExpense)
+			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='income' AND date >= ? AND user_id = ?", startOfMonth, userID).Scan(&monthlyIncome)
+			db.DB.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type='expense' AND date >= ? AND user_id = ?", startOfMonth, userID).Scan(&monthlyExpense)
 
 			// 如果本月有数据就用本月的，否则用总数据
 			if monthlyIncome > 0 || monthlyExpense > 0 {
@@ -123,19 +153,19 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Max Streak (从实际数据计算，但由于数据库为空，结果会是0)
+	// Max Streak (从当前用户数据计算)
 	var maxStreak sql.NullInt64
-	db.DB.QueryRow("SELECT MAX(streak) FROM habits").Scan(&maxStreak)
+	db.DB.QueryRow("SELECT MAX(streak) FROM habits WHERE user_id = ?", userID).Scan(&maxStreak)
 	if maxStreak.Valid {
 		data.MaxStreak = int(maxStreak.Int64)
 	} else {
 		data.MaxStreak = 0
 	}
 
-	// Todo Completion Rate
+	// Todo Completion Rate for current user
 	var total, completed int
-	db.DB.QueryRow("SELECT COUNT(*) FROM todos").Scan(&total)
-	db.DB.QueryRow("SELECT COUNT(*) FROM todos WHERE status = 'completed'").Scan(&completed)
+	db.DB.QueryRow("SELECT COUNT(*) FROM todos WHERE user_id = ?", userID).Scan(&total)
+	db.DB.QueryRow("SELECT COUNT(*) FROM todos WHERE status = 'completed' AND user_id = ?", userID).Scan(&completed)
 	if total > 0 {
 		data.TodoCompletionRate = (completed * 100) / total
 	}
@@ -157,8 +187,8 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		mEnd := mStart.AddDate(0, 1, 0)
 
 		var inc, exp sql.NullFloat64
-		db.DB.QueryRow("SELECT SUM(amount) FROM transactions WHERE type='income' AND date >= ? AND date < ?", mStart, mEnd).Scan(&inc)
-		db.DB.QueryRow("SELECT SUM(amount) FROM transactions WHERE type='expense' AND date >= ? AND date < ?", mStart, mEnd).Scan(&exp)
+		db.DB.QueryRow("SELECT SUM(amount) FROM transactions WHERE type='income' AND date >= ? AND date < ? AND user_id = ?", mStart, mEnd, userID).Scan(&inc)
+		db.DB.QueryRow("SELECT SUM(amount) FROM transactions WHERE type='expense' AND date >= ? AND date < ? AND user_id = ?", mStart, mEnd, userID).Scan(&exp)
 
 		if inc.Valid {
 			data.ChartIncome[i] = inc.Float64
@@ -168,14 +198,14 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Habit Stats (Today)
+	// Habit Stats (Today) for current user
 	// Simple approximation: Habits done today vs Total habits
 	var totalHabits int
-	db.DB.QueryRow("SELECT COUNT(*) FROM habits").Scan(&totalHabits)
+	db.DB.QueryRow("SELECT COUNT(*) FROM habits WHERE user_id = ?", userID).Scan(&totalHabits)
 
 	var doneToday int
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
-	db.DB.QueryRow("SELECT COUNT(DISTINCT habit_id) FROM habit_logs WHERE date >= ?", startOfDay).Scan(&doneToday)
+	db.DB.QueryRow("SELECT COUNT(DISTINCT hl.habit_id) FROM habit_logs hl INNER JOIN habits h ON hl.habit_id = h.id WHERE hl.date >= ? AND h.user_id = ?", startOfDay, userID).Scan(&doneToday)
 
 	data.HabitDoneCount = doneToday
 	data.HabitMissedCount = totalHabits - doneToday
@@ -185,14 +215,4 @@ func DashboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, "dashboard.html", data)
-}
-
-// BackupPageHandler handles the backup/restore page
-func BackupPageHandler(w http.ResponseWriter, r *http.Request) {
-	data := struct {
-		ActivePage string
-	}{
-		ActivePage: "backup",
-	}
-	renderTemplate(w, "backup.html", data)
 }
