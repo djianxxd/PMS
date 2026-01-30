@@ -74,7 +74,14 @@ func main() {
 	// 自动打开浏览器
 	go func() {
 		time.Sleep(2 * time.Second) // 等待服务器启动
-		openBrowser(fmt.Sprintf("http://localhost:%s", config.AppConfig.Server.Port))
+		// 检查是否已初始化
+		if config.IsInitialized() {
+			// 已初始化，打开登录页面
+			openBrowser(fmt.Sprintf("http://localhost:%s/login", config.AppConfig.Server.Port))
+		} else {
+			// 未初始化，打开配置页面
+			openBrowser(fmt.Sprintf("http://localhost:%s/config", config.AppConfig.Server.Port))
+		}
 	}()
 
 	// 启动服务器
@@ -126,7 +133,14 @@ func setupRoutes() {
 		// 重新初始化数据库连接
 		err := db.InitDB()
 		if err != nil {
-			log.Fatalf("数据库初始化失败: %v", err)
+			log.Printf("数据库初始化失败: %v", err)
+			// 数据库初始化失败，重定向到配置页面
+			http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/config" && r.URL.Path != "/config/test" {
+					http.Redirect(w, r, "/config", http.StatusSeeOther)
+				}
+			})
+			return
 		}
 
 		// 检查并修复所有用户的徽章

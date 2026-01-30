@@ -1,114 +1,203 @@
-{{template "layout.html" .}}
-
-{{define "content"}}
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-    
-    .config-container {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        padding: 40px;
-        width: 100%;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    
-    h1 {
-        color: #4a5568;
-        margin-bottom: 30px;
-        text-align: center;
-        font-size: 24px;
-    }
-    
-    .form-group {
-        margin-bottom: 20px;
-    }
-    
-    label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: #4a5568;
-    }
-    
-    input {
-        width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 16px;
-        transition: all 0.2s;
-    }
-    
-    input:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    
-    .section {
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    
-    .section h2 {
-        color: #2d3748;
-        margin-bottom: 15px;
-        font-size: 18px;
-    }
-    
-    button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 12px 24px;
-        font-size: 16px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-        width: 100%;
-        margin-top: 20px;
-    }
-    
-    button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
-    .error {
-        background: #fed7d7;
-        color: #c53030;
-        padding: 10px 16px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-        border-left: 4px solid #f56565;
-    }
-    
-    .success {
-        background: #c6f6d5;
-        color: #22543d;
-        padding: 10px 16px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-        border-left: 4px solid #38a169;
-    }
-</style>
-
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>goblog 首次配置</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .config-container {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            margin: 50px auto;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .header h1 {
+            color: #3b82f6;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .section-header i {
+            color: #3b82f6;
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-row label {
+            color: #475569;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .form-row input {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .form-row input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .note {
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .note p {
+            margin: 4px 0;
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .test-button {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        
+        .test-button:hover {
+            background: #e2e8f0;
+        }
+        
+        .save-button {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .save-button:hover {
+            background: #2563eb;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #22c55e;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .config-container {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .button-container {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            button {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
 <div class="config-container">
-    <h1>goblog 首次配置</h1>
+    <div class="header">
+        <h1>goblog 首次配置</h1>
+    </div>
     
     {{if .Error}}
     <div class="error">
@@ -124,53 +213,68 @@
     
     <form method="post" action="/config">
         <div class="section">
-            <h2>MySQL 数据库配置</h2>
-            
-            <div class="form-group">
-                <label for="mysql_host">主机地址</label>
-                <input type="text" id="mysql_host" name="mysql_host" value="{{.MySQLHost}}" required>
+            <div class="section-header">
+                <i class="fas fa-database"></i>
+                <span>MySQL 数据库配置</span>
             </div>
             
-            <div class="form-group">
-                <label for="mysql_port">端口</label>
-                <input type="text" id="mysql_port" name="mysql_port" value="{{.MySQLPort}}" required>
+            <div class="form-grid">
+                <div class="form-row">
+                    <label for="mysql_host">主机地址</label>
+                    <input type="text" id="mysql_host" name="mysql_host" value="{{.MySQLHost}}" required>
+                </div>
+                
+                <div class="form-row">
+                    <label for="mysql_port">端口</label>
+                    <input type="text" id="mysql_port" name="mysql_port" value="{{.MySQLPort}}" required>
+                </div>
+                
+                <div class="form-row">
+                    <label for="mysql_user">用户名</label>
+                    <input type="text" id="mysql_user" name="mysql_user" value="{{.MySQLUser}}" required>
+                </div>
+                
+                <div class="form-row">
+                    <label for="mysql_password">密码</label>
+                    <input type="password" id="mysql_password" name="mysql_password" value="{{.MySQLPassword}}">
+                </div>
             </div>
             
-            <div class="form-group">
-                <label for="mysql_user">用户名</label>
-                <input type="text" id="mysql_user" name="mysql_user" value="{{.MySQLUser}}" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="mysql_password">密码</label>
-                <input type="password" id="mysql_password" name="mysql_password" value="{{.MySQLPassword}}">
-            </div>
-            
-            <div class="form-group">
+            <div class="form-row full-width">
                 <label for="mysql_database">数据库名（MySQL数据库实例名称）</label>
                 <input type="text" id="mysql_database" name="mysql_database" value="{{.MySQLDatabase}}" required>
-                <small style="color: #718096; font-size: 12px; display: block; margin-top: 5px;">
-                    注意：1. 数据库表名会由应用程序自动创建，无需手动配置<br>
-                    2. 如果使用普通用户，请确保该用户对指定数据库有读写权限<br>
-                    3. 如果用户无创建数据库权限，请先手动创建数据库
-                </small>
+                <div class="note">
+                    <p>• 数据库表名会由应用程序自动创建，无需手动配置</p>
+                    <p>• 如果使用普通用户，请确保该用户对指定数据库有读写权限</p>
+                    <p>• 如果用户无创建数据库权限，请先手动创建数据库</p>
+                </div>
             </div>
         </div>
         
         <div class="section">
-            <h2>网站配置</h2>
+            <div class="section-header">
+                <i class="fas fa-globe"></i>
+                <span>网站配置</span>
+            </div>
             
-            <div class="form-group">
-                <label for="server_port">网站端口</label>
-                <input type="text" id="server_port" name="server_port" value="{{.ServerPort}}" required>
+            <div class="form-grid">
+                <div class="form-row">
+                    <label for="server_port">网站端口</label>
+                    <input type="text" id="server_port" name="server_port" value="{{.ServerPort}}" required>
+                </div>
             </div>
         </div>
         
-        <div class="form-group">
-            <button type="button" onclick="testDatabaseConnection()" style="margin-bottom: 10px;">测试数据库连接</button>
+        <div class="button-container">
+            <button type="button" class="test-button" onclick="testDatabaseConnection()">
+                <i class="fas fa-check-circle"></i>
+                测试数据库连接
+            </button>
+            <button type="submit" class="save-button">
+                <i class="fas fa-save"></i>
+                保存配置并启动
+            </button>
         </div>
-        
-        <button type="submit">保存配置并启动</button>
         
         <script>
         function testDatabaseConnection() {
@@ -186,8 +290,8 @@
             }
             
             const button = document.querySelector('button[onclick="testDatabaseConnection()"]');
-            const originalText = button.textContent;
-            button.textContent = '测试中...';
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试中...';
             button.disabled = true;
             
             fetch('/config/test', {
@@ -209,11 +313,12 @@
                 alert('测试过程中发生错误：' + error.message);
             })
             .finally(() => {
-                button.textContent = originalText;
+                button.innerHTML = originalText;
                 button.disabled = false;
             });
         }
         </script>
     </form>
 </div>
-{{end}}
+</body>
+</html>
