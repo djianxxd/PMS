@@ -1,2 +1,4 @@
 #
 *.exe
+main
+config.json
